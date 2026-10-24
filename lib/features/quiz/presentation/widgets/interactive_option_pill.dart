@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/text_styles.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../profile/presentation/providers/settings_provider.dart';
 
 enum OptionState { defaultState, selected, correct, incorrect }
 
 class InteractiveOptionPill extends ConsumerStatefulWidget {
-  final String label; // "A", "B", etc.
-  final String text;  // The answer text
+  final String label;
+  final String text;
   final OptionState state;
   final VoidCallback onTap;
 
@@ -54,36 +54,39 @@ class _InteractiveOptionPillState extends ConsumerState<InteractiveOptionPill> {
 
   @override
   Widget build(BuildContext context) {
-    Color baseColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    Color coreColor;
+    Color bgColor;
     Color borderColor;
-    Color shadowColor;
     Color textColor;
+    bool isActive = widget.state != OptionState.defaultState;
 
     switch (widget.state) {
       case OptionState.selected:
-        baseColor = AppColors.primaryMint.withValues(alpha: 0.1);
-        borderColor = AppColors.primaryMint;
-        shadowColor = AppColors.primaryMint.withValues(alpha: 0.3);
-        textColor = AppColors.primaryMint;
+        coreColor = AppColors.primaryGreen;
+        bgColor = isDark ? AppColors.primaryGreen.withValues(alpha: 0.15) : AppColors.primaryGreen.withValues(alpha: 0.1);
+        borderColor = AppColors.primaryGreen;
+        textColor = isDark ? Colors.white : AppColors.primaryGreenDark;
         break;
       case OptionState.correct:
-        baseColor = AppColors.featherGreen.withValues(alpha: 0.15);
-        borderColor = AppColors.featherGreen;
-        shadowColor = AppColors.featherGreen.withValues(alpha: 0.4);
-        textColor = AppColors.featherGreen;
+        coreColor = AppColors.success;
+        bgColor = AppColors.success.withValues(alpha: 0.15);
+        borderColor = AppColors.success;
+        textColor = isDark ? Colors.white : AppColors.success;
         break;
       case OptionState.incorrect:
-        baseColor = AppColors.foxOrange.withValues(alpha: 0.15);
-        borderColor = AppColors.foxOrange;
-        shadowColor = AppColors.foxOrange.withValues(alpha: 0.4);
-        textColor = AppColors.foxOrange;
+        coreColor = AppColors.error;
+        bgColor = AppColors.error.withValues(alpha: 0.15);
+        borderColor = AppColors.error;
+        textColor = isDark ? Colors.white : AppColors.error;
         break;
       case OptionState.defaultState:
       default:
-        baseColor = Colors.white;
-        borderColor = AppColors.surfaceLighter;
-        shadowColor = AppColors.surfaceLighter.withValues(alpha: 0.5);
-        textColor = AppColors.textPrimary;
+        coreColor = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
+        bgColor = isDark ? AppColors.surfaceDimDark : AppColors.surfaceLight;
+        borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+        textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
         break;
     }
 
@@ -94,61 +97,71 @@ class _InteractiveOptionPillState extends ConsumerState<InteractiveOptionPill> {
       onPointerUp: _handlePointerUp,
       onPointerCancel: _handlePointerCancel,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
         margin: EdgeInsets.only(
           bottom: 16 - _elevation + currentElevation,
           top: _elevation - currentElevation,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: baseColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 2),
+          borderRadius: BorderRadius.circular(20),
+          color: bgColor,
+          border: Border.all(
+            color: borderColor,
+            width: isActive ? 2 : 1,
+          ),
           boxShadow: [
-            BoxShadow(
-              color: shadowColor,
-              offset: Offset(0, currentElevation),
-              blurRadius: 0,
-            ),
+            // Soft shadow for 3D press effect
+            if (!isActive || widget.state == OptionState.selected)
+              BoxShadow(
+                color: borderColor.withValues(alpha: isDark ? 0.3 : 0.2),
+                offset: Offset(0, currentElevation),
+                blurRadius: 0,
+              ),
           ],
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: widget.state == OptionState.defaultState 
-                    ? AppColors.surfaceLight 
-                    : borderColor.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  widget.label,
-                  style: AppTextStyles.label.copyWith(
-                    color: widget.state == OptionState.defaultState ? AppColors.textSecondary : textColor,
-                    fontWeight: FontWeight.bold,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isActive ? coreColor.withValues(alpha: 0.2) : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isActive ? coreColor : borderColor,
+                    width: isActive ? 2 : 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.label,
+                    style: AppTypography.labelLarge.copyWith(
+                      color: isActive ? coreColor : coreColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                widget.text,
-                style: AppTextStyles.body.copyWith(
-                  color: textColor,
-                  fontWeight: widget.state != OptionState.defaultState ? FontWeight.bold : FontWeight.normal,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  widget.text,
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: textColor,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                    height: 1.3,
+                  ),
                 ),
               ),
-            ),
-            if (widget.state == OptionState.correct)
-              const Icon(Icons.check_circle, color: AppColors.featherGreen),
-            if (widget.state == OptionState.incorrect)
-              const Icon(Icons.cancel, color: AppColors.foxOrange),
-          ],
+              if (widget.state == OptionState.correct)
+                const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+              if (widget.state == OptionState.incorrect)
+                const Icon(Icons.cancel, color: AppColors.error, size: 28),
+            ],
+          ),
         ),
       ),
     );
@@ -160,7 +173,7 @@ class _InteractiveOptionPillState extends ConsumerState<InteractiveOptionPill> {
           .scale(duration: 200.ms, curve: Curves.easeIn, end: const Offset(1, 1));
     } else if (widget.state == OptionState.incorrect) {
       return pill.animate()
-          .shakeX(duration: 400.ms, amount: 4, hz: 6);
+          .shakeX(duration: 400.ms, amount: 6, hz: 8);
     }
 
     return pill;

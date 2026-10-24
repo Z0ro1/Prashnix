@@ -59,7 +59,7 @@ final class RetrySprintNotifierProvider
 }
 
 String _$retrySprintNotifierHash() =>
-    r'86ed9de044b55e35322d0a2873e5bd5eeafa3bc5';
+    r'7321b5777be116f531ae920973b85fdfca6cd7af';
 
 final class RetrySprintNotifierFamily extends $Family
     with

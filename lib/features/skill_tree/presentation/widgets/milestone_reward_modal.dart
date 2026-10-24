@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -56,66 +57,70 @@ class _MilestoneRewardModalState extends ConsumerState<MilestoneRewardModal> wit
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 6,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(3),
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F1115).withValues(alpha: 0.8),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          ScaleTransition(
-            scale: _scaleAnimation,
-            child: Text(
-              _isOpened ? '💎' : '🎁',
-              style: const TextStyle(fontSize: 100),
+            const SizedBox(height: 32),
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: Text(
+                _isOpened ? '💎' : '🎁',
+                style: const TextStyle(fontSize: 100),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            _isOpened ? 'Awesome! +100 XP' : 'Milestone Reached!',
-            style: AppTextStyles.h2.copyWith(
-              color: _isOpened ? AppColors.primaryMint : const Color(0xFFFFC107),
+            const SizedBox(height: 24),
+            Text(
+              _isOpened ? 'Awesome! +100 XP' : 'Milestone Reached!',
+              style: AppTextStyles.h2.copyWith(
+                color: _isOpened ? AppColors.primaryMint : const Color(0xFFFFC107),
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _isOpened 
-                ? 'You earned bonus XP for your hard work.' 
-                : 'Open the chest to reveal your reward.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          if (!_isOpened)
-            CustomButton(
-              text: 'Open Chest',
-              variant: ButtonVariant.primaryMint,
-              onPressed: _openChest,
-            )
-          else
-            CustomButton(
-              text: 'Continue',
-              variant: ButtonVariant.secondaryNavy,
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Complete node in provider
-                ref.read(skillTreeProvider.notifier).completeLesson(widget.node.id);
-              },
+            const SizedBox(height: 8),
+            Text(
+              _isOpened 
+                  ? 'You earned bonus XP for your hard work.' 
+                  : 'Open the chest to reveal your reward.',
+              style: AppTextStyles.body.copyWith(color: Colors.white70),
+              textAlign: TextAlign.center,
             ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 32),
+            if (!_isOpened)
+              CustomButton(
+                text: 'Open Chest',
+                variant: ButtonVariant.primaryMint,
+                onPressed: _openChest,
+              )
+            else
+              CustomButton(
+                text: 'Continue',
+                variant: ButtonVariant.primaryMint,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Complete node in provider
+                  ref.read(skillTreeProvider.notifier).completeLesson(widget.node.id);
+                },
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

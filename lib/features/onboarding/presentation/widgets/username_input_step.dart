@@ -18,9 +18,10 @@ class UsernameInputStep extends ConsumerWidget {
           return AppColors.primaryMint;
         case UsernameStatus.taken:
         case UsernameStatus.invalidFormat:
+        case UsernameStatus.error:
           return AppColors.accentRed;
         default:
-          return AppColors.surfaceLight;
+          return Colors.white.withValues(alpha: 0.1);
       }
     }
 
@@ -34,6 +35,8 @@ class UsernameInputStep extends ConsumerWidget {
           return 'Username is already taken.';
         case UsernameStatus.invalidFormat:
           return '3-15 chars, lowercase, numbers, underscores only.';
+        case UsernameStatus.error:
+          return 'Network error. Please try again.';
         default:
           return '';
       }
@@ -51,6 +54,7 @@ class UsernameInputStep extends ConsumerWidget {
           return const Icon(Icons.check_circle, color: AppColors.primaryMint, size: 20);
         case UsernameStatus.taken:
         case UsernameStatus.invalidFormat:
+        case UsernameStatus.error:
           return const Icon(Icons.cancel, color: AppColors.accentRed, size: 20);
         default:
           return const SizedBox.shrink();
@@ -65,19 +69,20 @@ class UsernameInputStep extends ConsumerWidget {
         children: [
           Text(
             'Choose your Candidate ID',
-            style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.h2.copyWith(color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'This will be your unique leaderboard name.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.body.copyWith(color: Colors.white70),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: getStatusColor(), width: 2),
             ),
@@ -92,24 +97,38 @@ class UsernameInputStep extends ConsumerWidget {
                 Expanded(
                   child: TextField(
                     autofocus: true,
-                    style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textInputAction: TextInputAction.done,
+                    style: AppTextStyles.h3.copyWith(color: Colors.white),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText: 'username',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      hintStyle: TextStyle(color: Colors.white30),
                     ),
                     onChanged: notifier.onUsernameChanged,
                   ),
                 ),
-                getStatusIcon(),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                  child: Container(
+                    key: ValueKey(state.usernameStatus),
+                    child: getStatusIcon(),
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            getStatusMessage(),
-            style: AppTextStyles.label.copyWith(color: getStatusColor()),
-            textAlign: TextAlign.center,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              getStatusMessage(),
+              key: ValueKey(state.usernameStatus),
+              style: AppTextStyles.label.copyWith(color: getStatusColor()),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),

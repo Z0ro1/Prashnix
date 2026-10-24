@@ -1,0 +1,32 @@
+# Add these dependencies and asset paths to your Flutter pubspec.yaml
+
+dependencies:
+  flutter:
+    sdk: flutter
+  audioplayers: ^6.1.1
+  lottie: ^3.3.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/audio/
+    - assets/lottie/
+    - assets/icons/
+
+  fonts:
+    - family: DuolingoSans
+      fonts:
+        - asset: assets/fonts/duolingosans_regular.otf
+        - asset: assets/fonts/duolingosans_medium.otf
+          weight: 500
+        - asset: assets/fonts/duolingosans_bold.otf
+          weight: 700
+
+    - family: DINNext
+      fonts:
+        - asset: assets/fonts/din_next_for_duolingo.otf
+        - asset: assets/fonts/din_next_for_duolingo_medium.otf
+          weight: 500
+        - asset: assets/fonts/din_next_for_duolingo_bold.otf
+          weight: 700

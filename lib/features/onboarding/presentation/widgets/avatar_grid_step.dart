@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../providers/onboarding_provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class AvatarGridStep extends ConsumerWidget {
   const AvatarGridStep({super.key});
@@ -27,13 +28,13 @@ class AvatarGridStep extends ConsumerWidget {
           const SizedBox(height: 24),
           Text(
             'Select your Avatar',
-            style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.h2.copyWith(color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'This is how others will see you on the leaderboard.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.body.copyWith(color: Colors.white70),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -58,13 +59,17 @@ class AvatarGridStep extends ConsumerWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
-                    transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
+                    transform: Matrix4.diagonal3Values(
+                      isSelected ? 1.05 : 1.0, 
+                      isSelected ? 1.05 : 1.0, 
+                      1.0
+                    ),
                     transformAlignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
+                      color: Colors.white.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AppColors.primaryMint : AppColors.surfaceLight,
+                        color: isSelected ? AppColors.primaryMint : Colors.white.withValues(alpha: 0.2),
                         width: isSelected ? 3 : 1,
                       ),
                       boxShadow: isSelected
@@ -82,7 +87,7 @@ class AvatarGridStep extends ConsumerWidget {
                       ),
                     ),
                   ),
-                );
+                ).animate(delay: (index * 40).ms).scale(duration: 400.ms, curve: Curves.easeOutBack).fadeIn(duration: 300.ms);
               },
             ),
           ),

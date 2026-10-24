@@ -1,16 +1,21 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../data/repositories/auth_repository.dart';
 
 part 'auth_provider.g.dart';
 
+// ─── Auth Mode ──────────────────────────────────────────────────────────────
+
 enum AuthMode { signIn, signUp }
+
+// ─── Auth UI State ──────────────────────────────────────────────────────────
 
 class AuthStateData {
   final AuthMode mode;
   final bool isLoading;
-  final String? error;
+  final Object? error;
 
   AuthStateData({
     this.mode = AuthMode.signIn,
@@ -21,7 +26,7 @@ class AuthStateData {
   AuthStateData copyWith({
     AuthMode? mode,
     bool? isLoading,
-    String? error,
+    Object? error,
   }) {
     return AuthStateData(
       mode: mode ?? this.mode,
@@ -30,6 +35,8 @@ class AuthStateData {
     );
   }
 }
+
+// ─── Auth Notifier ──────────────────────────────────────────────────────────
 
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
@@ -68,14 +75,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      // Extract clean error message
-      String message = e.toString();
-      if (message.contains('Exception:')) {
-        message = message.replaceAll('Exception:', '').trim();
-      } else if (message.contains('AuthException:')) {
-        message = message.replaceAll('AuthException:', '').trim();
-      }
-      state = state.copyWith(isLoading: false, error: message);
+      state = state.copyWith(isLoading: false, error: e);
       return false;
     }
   }
@@ -92,26 +92,56 @@ class AuthNotifier extends _$AuthNotifier {
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      String message = e.toString();
-      if (message.contains('Exception:')) {
-        message = message.replaceAll('Exception:', '').trim();
-      } else if (message.contains('AuthException:')) {
-        message = message.replaceAll('AuthException:', '').trim();
-      }
-      state = state.copyWith(isLoading: false, error: message);
+      state = state.copyWith(isLoading: false, error: e);
       return false;
     }
   }
 
-
+  Future<bool> resetPassword(String email) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _authRepository.resetPasswordForEmail(email: email);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e);
+      return false;
+    }
+  }
 
   Future<void> signOut() async {
     await _authRepository.signOut();
   }
+
+  // _cleanError removed - we use UxErrorHelper directly now
 }
 
-// Stream provider for listening to Supabase Auth State globally
+// ─── Auth State Stream ──────────────────────────────────────────────────────
+// This stream is watched by GoRouter so route redirects re-evaluate on
+// every sign-in / sign-out event.
+
 @riverpod
-Stream<dynamic> authStateChanges(Ref ref) {
+Stream<AuthState> authStateChanges(Ref ref) {
   return SupabaseConfig.client.auth.onAuthStateChange;
+}
+
+// ─── Profile / Onboarding Status ────────────────────────────────────────────
+// Fetches the profile from Supabase whenever the auth state changes.
+// Returns null if the user is unauthenticated or has no profile row yet.
+
+@riverpod
+Future<Map<String, dynamic>?> userProfile(Ref ref) async {
+  // Re-evaluate whenever the auth session changes
+  ref.watch(authStateChangesProvider);
+
+  final user = SupabaseConfig.client.auth.currentUser;
+  if (user == null) return null;
+
+  try {
+    final repo = AuthRepository();
+    return await repo.fetchUserProfile(user.id);
+  } catch (e) {
+    debugPrint('Failed to fetch user profile: $e');
+    return null;
+  }
 }

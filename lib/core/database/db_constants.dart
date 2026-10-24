@@ -2,7 +2,7 @@ class DbConstants {
   DbConstants._();
 
   static const String databaseName = 'spardha_questions.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 5;
 
   // Table Names
   static const String tableQuestions = 'questions';
@@ -14,7 +14,7 @@ class DbConstants {
   // Schema Definitions
   static const String createQuestionsTable = '''
     CREATE TABLE IF NOT EXISTS $tableQuestions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT PRIMARY KEY,
       subject_tag TEXT NOT NULL,
       subtopic_tag TEXT,
       question_text TEXT NOT NULL,
@@ -43,13 +43,12 @@ class DbConstants {
 
   static const String createMistakesTable = '''
     CREATE TABLE IF NOT EXISTS $tableMistakes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      question_id INTEGER NOT NULL,
+      id TEXT PRIMARY KEY,
+      question_id TEXT NOT NULL,
       user_answer TEXT NOT NULL,
       mistake_count INTEGER DEFAULT 1,
       is_cleared INTEGER DEFAULT 0,
-      last_failed_at TEXT NOT NULL,
-      FOREIGN KEY (question_id) REFERENCES $tableQuestions (id) ON DELETE CASCADE
+      last_failed_at TEXT NOT NULL
     )
   ''';
 
@@ -63,9 +62,8 @@ class DbConstants {
   static const String createSavedQuestionsTable = '''
     CREATE TABLE IF NOT EXISTS $tableSavedQuestions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      question_id INTEGER NOT NULL UNIQUE,
-      saved_at TEXT NOT NULL,
-      FOREIGN KEY (question_id) REFERENCES $tableQuestions (id) ON DELETE CASCADE
+      question_id TEXT NOT NULL UNIQUE,
+      saved_at TEXT NOT NULL
     )
   ''';
 

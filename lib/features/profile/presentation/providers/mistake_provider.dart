@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/models/mistake_item_model.dart';
 import '../../../../core/models/question_model.dart';
@@ -54,8 +55,8 @@ class MistakeNotifier extends _$MistakeNotifier {
     _mistakeRepo = MistakeRepository();
     _questionRepo = QuestionRepository();
     
-    // Load initial data
-    _loadMistakes();
+    // Load initial data asynchronously so we don't access state before build returns
+    Future.microtask(() => _loadMistakes());
     
     return const MistakeState();
   }
@@ -63,50 +64,50 @@ class MistakeNotifier extends _$MistakeNotifier {
   Future<void> _loadMistakes() async {
     state = state.copyWith(isLoading: true);
     
-    final dbMistakes = await _mistakeRepo.getUnclearedMistakes();
-    
-    if (dbMistakes.isEmpty) {
-      state = state.copyWith(mistakes: [], isLoading: false);
-      return;
-    }
-
-    // Because questions are currently mocked/demo, we might not have them in DB
-    // I'll attempt to fetch them. If not found, I will generate mock QuestionModels
-    // so the UI works seamlessly.
-    final List<int> qIds = dbMistakes.map((m) => m.questionId).toList();
-    List<QuestionModel> questions = await _questionRepo.getQuestionsByIds(qIds);
-
-    // Fallback: Generate mock if missing from DB for demo purposes
-    final List<MistakeItemModel> items = [];
-    for (var m in dbMistakes) {
-      QuestionModel? q;
-      try {
-        q = questions.firstWhere((element) => element.id == m.questionId);
-      } catch (e) {
-        // Create mock
-        q = QuestionModel(
-          id: m.questionId,
-          subjectTag: 'Mock Subject',
-          questionText: 'Mock Question for ID ${m.questionId}',
-          optionA: 'Option A',
-          optionB: 'Option B',
-          optionC: 'Option C',
-          optionD: 'Option D',
-          correctOption: 'C',
-          explanation: 'This is a mock explanation for question ${m.questionId}.',
-        );
+    try {
+      final dbMistakes = await _mistakeRepo.getUnclearedMistakes();
+      
+      if (dbMistakes.isEmpty) {
+        state = state.copyWith(mistakes: [], isLoading: false);
+        return;
       }
-      items.add(MistakeItemModel(mistake: m, question: q));
-    }
 
-    state = state.copyWith(mistakes: items, isLoading: false);
+      // Because questions are currently mocked/demo, we might not have them in DB
+      // I'll attempt to fetch them. If not found, I will generate mock QuestionModels
+      // so the UI works seamlessly.
+      final List<String> qIds = dbMistakes.map((m) => m.questionId).toList();
+      List<QuestionModel> questions = await _questionRepo.getQuestionsByIds(qIds);
+
+      final List<MistakeItemModel> items = [];
+      for (var m in dbMistakes) {
+        try {
+          final q = questions.firstWhere((element) => element.id == m.questionId);
+          items.add(MistakeItemModel(mistake: m, question: q));
+        } catch (e) {
+          // Skip this mistake if the actual question data doesn't exist in the database yet.
+        }
+      }
+
+      state = state.copyWith(mistakes: items, isLoading: false);
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('[MistakeNotifier] Failed to load mistakes: $e');
+        print(stackTrace);
+      }
+      // Ensure we stop spinning even if an unexpected error occurs
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> loadMistakes() async {
+    await _loadMistakes();
   }
 
   void setFilter(String filter) {
     state = state.copyWith(activeFilter: filter);
   }
 
-  Future<void> clearMistake(int questionId) async {
+  Future<void> clearMistake(String questionId) async {
     await _mistakeRepo.markMistakeCleared(questionId);
     
     // Award heart

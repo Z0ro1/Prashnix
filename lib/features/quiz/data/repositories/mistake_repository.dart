@@ -1,6 +1,7 @@
 import '../../../../core/database/database_service.dart';
 import '../../../../core/database/db_constants.dart';
 import '../../../../core/models/mistake_model.dart';
+import '../../../../core/config/supabase_config.dart';
 
 class MistakeRepository {
   final DatabaseService _dbService;
@@ -8,7 +9,7 @@ class MistakeRepository {
   MistakeRepository({DatabaseService? dbService})
       : _dbService = dbService ?? DatabaseService();
 
-  Future<void> logMistake(int questionId, String userAnswer) async {
+  Future<void> logMistake(String questionId, String userAnswer) async {
     final db = await _dbService.database;
 
     // Check if mistake already exists for this question
@@ -42,6 +43,23 @@ class MistakeRepository {
       );
       await db.insert(DbConstants.tableMistakes, newMistake.toMap());
     }
+
+    // Fire and forget to Supabase
+    try {
+      final supabase = SupabaseConfig.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        final mistakeCount = existing.isNotEmpty ? (existing.first['mistake_count'] as int) + 1 : 1;
+        await supabase.from('user_mistakes').upsert({
+          'user_id': userId,
+          'question_id': questionId,
+          'user_answer': userAnswer,
+          'mistake_count': mistakeCount,
+          'is_cleared': false,
+          'last_failed_at': now,
+        }, onConflict: 'user_id, question_id');
+      }
+    } catch (_) {}
   }
 
   Future<List<MistakeModel>> getUnclearedMistakes() async {
@@ -57,7 +75,7 @@ class MistakeRepository {
     return maps.map((map) => MistakeModel.fromMap(map)).toList();
   }
 
-  Future<void> markMistakeCleared(int questionId) async {
+  Future<void> markMistakeCleared(String questionId) async {
     final db = await _dbService.database;
 
     await db.update(
@@ -66,5 +84,16 @@ class MistakeRepository {
       where: 'question_id = ?',
       whereArgs: [questionId],
     );
+
+    // Fire and forget to Supabase
+    try {
+      final supabase = SupabaseConfig.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        await supabase.from('user_mistakes').update({
+          'is_cleared': true,
+        }).eq('user_id', userId).eq('question_id', questionId);
+      }
+    } catch (_) {}
   }
 }

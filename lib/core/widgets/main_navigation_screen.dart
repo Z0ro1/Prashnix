@@ -1,32 +1,29 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../features/profile/presentation/providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/supabase_config.dart';
 import '../state/user_state.dart';
-import '../../features/skill_tree/presentation/screens/skill_tree_screen.dart';
-import '../../features/mistakes/presentation/screens/mistake_review_screen.dart';
-import '../../features/quiz/presentation/screens/weekly_test_screen.dart';
-import '../../features/gamification/presentation/screens/league_screen.dart';
-import '../../features/profile/presentation/widgets/settings_profile_bottom_sheet.dart';
+import '../../features/skill_tree/data/repositories/sync_service.dart';
+import '../../features/skill_tree/presentation/providers/skill_tree_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
-  const MainNavigationScreen({super.key});
+  final StatefulNavigationShell navigationShell;
+
+  const MainNavigationScreen({
+    super.key,
+    required this.navigationShell,
+  });
 
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const SkillTreeScreen(), // Home / Path
-    const MistakeReviewScreen(), // Mistakes
-    const WeeklyTestScreen(), // Weekly Test
-    const LeagueScreen(), // Streaks -> League
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -35,24 +32,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final user = SupabaseConfig.client.auth.currentUser;
-      if (user != null) {
-        final response = await SupabaseConfig.client
-            .from('profiles')
-            .select()
-            .eq('id', user.id)
-            .maybeSingle();
-            
-        if (response != null) {
-          ref.read(userStoreProvider.notifier).setProfile(
-            username: response['username'] ?? '',
-            avatarId: response['avatar_id'] ?? '',
-            selectedDistrict: response['district'] ?? 'Beginner District',
-            streakCount: response['streak_count'] ?? 0,
-            totalXp: response['total_xp'] ?? 0,
-          );
-        }
-      }
+      await ref.read(userStoreProvider.notifier).refreshProfile();
+      // Sync progress from cloud to SQLite
+      await SyncService().pullProgress();
+      // Refresh the skill tree state so it loads the newly downloaded progress
+      ref.invalidate(skillTreeProvider);
     } catch (e) {
       debugPrint('Error loading profile: $e');
     }
@@ -60,61 +44,101 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey.shade300, width: 2)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            if (index == 4) {
-              SettingsProfileBottomSheet.show(context);
-              return;
-            }
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.cardSurface,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          elevation: 0,
-          items: [
-            _buildNavItem('assets/icons/home.svg', 0),
-            _buildNavItem('assets/icons/Mistake questions.svg', 1),
-            _buildNavItem('assets/icons/weekly test.svg', 2),
-            _buildNavItem('assets/icons/Streaks.svg', 3),
-            _buildNavItem('assets/icons/setting and profile.svg', 4),
-          ],
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      extendBody: true, // Crucial for floating nav bar
+      body: widget.navigationShell,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16, left: 24, right: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildNavItem(CupertinoIcons.home, 'Home', 0, context),
+                      _buildNavItem(CupertinoIcons.doc_text, 'Review', 1, context),
+                      _buildNavItem(CupertinoIcons.bell, 'Tests', 2, context),
+                      _buildNavItem(CupertinoIcons.flame, 'Streaks', 3, context),
+                      _buildNavItem(CupertinoIcons.person, 'Profile', 4, context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(String assetPath, int index) {
-    final isSelected = _currentIndex == index;
-    return BottomNavigationBarItem(
-      icon: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryMint.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected ? Border.all(color: AppColors.primaryMint.withOpacity(0.3), width: 2) : Border.all(color: Colors.transparent, width: 2),
-        ),
-        child: Opacity(
-          opacity: isSelected ? 1.0 : 0.5,
-          child: SvgPicture.asset(
-            assetPath,
-            width: 32,
-            height: 32,
+  Widget _buildNavItem(IconData iconData, String label, int index, BuildContext context) {
+    final isSelected = widget.navigationShell.currentIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final color = isSelected 
+        ? AppColors.primaryGreenDark 
+        : (isDark ? AppColors.textMutedDark : AppColors.textMutedLight);
+
+    return GestureDetector(
+      onTap: () {
+        if (index != widget.navigationShell.currentIndex) {
+          if (ref.read(settingsProvider).hapticsEnabled) {
+            HapticFeedback.selectionClick();
+          }
+        }
+        widget.navigationShell.goBranch(
+          index,
+          initialLocation: index == widget.navigationShell.currentIndex,
+        );
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Tooltip(
+        message: label,
+        preferBelow: false,
+        verticalOffset: 24,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Removed Morphing Glass Bubble Background
+                 
+              // Icon
+              Icon(iconData, size: 26, color: color)
+                .animate(target: isSelected ? 1 : 0)
+                .scale(begin: const Offset(1, 1), end: const Offset(1.15, 1.15), duration: 200.ms, curve: Curves.easeOutBack),
+            ],
           ),
         ),
       ),
-      label: '',
     );
   }
 }

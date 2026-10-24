@@ -1,4 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../config/supabase_config.dart';
+import '../../features/profile/data/repositories/progress_repository.dart';
 
 part 'user_state.g.dart';
 
@@ -45,38 +47,57 @@ class UserStore extends _$UserStore {
     return const UserModel();
   }
 
-  void incrementStreak() {
-    state = state.copyWith(streakCount: state.streakCount + 1);
+  Future<void> incrementStreak() async {
+    final newValue = state.streakCount + 1;
+    state = state.copyWith(streakCount: newValue);
+    await _syncToSupabase({'streak_count': newValue});
   }
 
-  void addXp(int xp) {
-    state = state.copyWith(totalXp: state.totalXp + xp);
+  Future<void> addXp(int xp) async {
+    final newValue = state.totalXp + xp;
+    state = state.copyWith(totalXp: newValue);
+    // You could also track weekly_xp here by reading it first, but for now we sync total_xp
+    await _syncToSupabase({'total_xp': newValue});
   }
 
-  void useHeart() {
+  Future<void> useHeart() async {
     if (state.heartCount > 0) {
-      state = state.copyWith(heartCount: state.heartCount - 1);
+      final newValue = state.heartCount - 1;
+      state = state.copyWith(heartCount: newValue);
+      await _syncToSupabase({'current_hearts': newValue});
     }
   }
 
-  void updateHearts(int count) {
+  Future<void> updateHearts(int count) async {
     state = state.copyWith(heartCount: count);
+    await _syncToSupabase({'current_hearts': count});
   }
 
-  void updateUsername(String username) {
+  Future<void> updateUsername(String username) async {
     state = state.copyWith(username: username);
+    await _syncToSupabase({'username': username});
   }
 
-  void resetHearts() {
+  Future<void> resetHearts() async {
     state = state.copyWith(heartCount: 5);
+    await _syncToSupabase({'current_hearts': 5});
   }
 
-  void updateProfile({String? username, String? avatarId, String? selectedDistrict}) {
+  Future<void> updateProfile({String? username, String? avatarId, String? selectedDistrict}) async {
     state = state.copyWith(
       username: username ?? state.username,
       avatarId: avatarId ?? state.avatarId,
       selectedDistrict: selectedDistrict ?? state.selectedDistrict,
     );
+    
+    final updates = <String, dynamic>{};
+    if (username != null) updates['username'] = username;
+    if (avatarId != null) updates['avatar_id'] = avatarId;
+    if (selectedDistrict != null) updates['district'] = selectedDistrict;
+    
+    if (updates.isNotEmpty) {
+      await _syncToSupabase(updates);
+    }
   }
 
   void setProfile({
@@ -85,13 +106,65 @@ class UserStore extends _$UserStore {
     required String selectedDistrict,
     int? streakCount,
     int? totalXp,
+    int? heartCount,
   }) {
+    // This is called on load, so we don't sync back to avoid infinite loops
     state = state.copyWith(
       username: username,
       avatarId: avatarId,
       selectedDistrict: selectedDistrict,
       streakCount: streakCount ?? state.streakCount,
       totalXp: totalXp ?? state.totalXp,
+      heartCount: heartCount ?? state.heartCount,
     );
+  }
+
+  Future<void> refreshProfile() async {
+    try {
+      final user = SupabaseConfig.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await SupabaseConfig.client
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response != null) {
+        state = state.copyWith(
+          username: response['username'] as String? ?? state.username,
+          avatarId: response['avatar_id'] as String? ?? state.avatarId,
+          selectedDistrict: response['district'] as String? ?? state.selectedDistrict,
+          streakCount: (response['streak_count'] as num?)?.toInt() ?? state.streakCount,
+          totalXp: (response['total_xp'] as num?)?.toInt() ?? state.totalXp,
+          heartCount: (response['current_hearts'] as num?)?.toInt() ?? state.heartCount,
+        );
+
+        if (response['weekly_test_level'] != null) {
+          await ProgressRepository().saveLocalState(
+            'highest_unlocked_level',
+            response['weekly_test_level'].toString(),
+          );
+        }
+      }
+    } catch (e) {
+      print('Failed to refresh user profile from Supabase: $e');
+    }
+  }
+
+  Future<void> _syncToSupabase(Map<String, dynamic> updates) async {
+    try {
+      final userId = SupabaseConfig.client.auth.currentUser?.id;
+      if (userId == null) return;
+      
+      updates['updated_at'] = DateTime.now().toIso8601String();
+      
+      await SupabaseConfig.client
+          .from('profiles')
+          .update(updates)
+          .eq('id', userId);
+    } catch (e) {
+      print('Failed to sync user profile to Supabase: $e');
+    }
   }
 }

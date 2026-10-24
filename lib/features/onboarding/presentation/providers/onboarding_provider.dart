@@ -6,7 +6,7 @@ import '../../../profile/data/repositories/progress_repository.dart';
 
 part 'onboarding_provider.g.dart';
 
-enum UsernameStatus { idle, checking, available, taken, invalidFormat }
+enum UsernameStatus { idle, checking, available, taken, invalidFormat, error }
 
 class OnboardingState {
   final int currentStep;
@@ -58,7 +58,7 @@ class OnboardingNotifier extends _$OnboardingNotifier {
 
   @override
   OnboardingState build() {
-    _authRepository = AuthRepository();
+    _authRepository = ref.read(authRepositoryProvider);
     
     ref.onDispose(() {
       _debounceTimer?.cancel();
@@ -124,7 +124,7 @@ class OnboardingNotifier extends _$OnboardingNotifier {
       }
     } catch (e) {
       if (state.username == username) {
-        state = state.copyWith(usernameStatus: UsernameStatus.available);
+        state = state.copyWith(usernameStatus: UsernameStatus.error);
       }
     }
   }

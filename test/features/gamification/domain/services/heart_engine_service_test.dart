@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:streak/features/gamification/domain/services/heart_engine_service.dart';
+import 'package:prashnix/features/gamification/domain/services/heart_engine_service.dart';
 
 void main() {
   late HeartEngineService engine;
@@ -35,9 +35,9 @@ void main() {
       final now = DateTime.utc(2026, 9, 9, 12, 0); // Noon UTC
       final lastRegen = now.subtract(const Duration(minutes: 30));
 
-      final result = engine.calculateRegeneratedHearts(10, lastRegen, nowTime: now);
+      final result = engine.calculateRegeneratedHearts(3, lastRegen, nowTime: now);
 
-      expect(result.updatedHearts, 10);
+      expect(result.updatedHearts, 3);
       expect(result.secondsUntilNextRegen, (60 * 60) - (30 * 60)); // 30 mins remaining
     });
 
@@ -45,9 +45,9 @@ void main() {
       final now = DateTime.utc(2026, 9, 9, 12, 0); // Noon UTC
       final lastRegen = now.subtract(const Duration(hours: 3, minutes: 15)); // 195 mins elapsed
 
-      final result = engine.calculateRegeneratedHearts(10, lastRegen, nowTime: now);
+      final result = engine.calculateRegeneratedHearts(1, lastRegen, nowTime: now);
 
-      expect(result.updatedHearts, 13); // 10 + 3
+      expect(result.updatedHearts, 4); // 1 + 3
       // Next regen should be in 45 mins (since 15 mins have passed towards the next hour)
       expect(result.secondsUntilNextRegen, (45 * 60)); 
     });
@@ -70,10 +70,10 @@ void main() {
       expect(engine.calculateStreakBonus(11), 0);
     });
 
-    test('canLaunchLesson: returns true only if hearts >= 20', () {
-      expect(engine.canLaunchLesson(19), isFalse);
-      expect(engine.canLaunchLesson(20), isTrue);
-      expect(engine.canLaunchLesson(25), isTrue);
+    test('canLaunchLesson: returns true only if hearts >= 1', () {
+      expect(engine.canLaunchLesson(0), isFalse);
+      expect(engine.canLaunchLesson(1), isTrue);
+      expect(engine.canLaunchLesson(5), isTrue);
     });
   });
 }

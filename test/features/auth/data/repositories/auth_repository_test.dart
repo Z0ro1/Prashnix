@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:streak/features/auth/data/repositories/auth_repository.dart';
+import 'package:prashnix/features/auth/data/repositories/auth_repository.dart';
 
 @GenerateMocks([SupabaseClient, GoTrueClient, User])
 import 'auth_repository_test.mocks.dart';

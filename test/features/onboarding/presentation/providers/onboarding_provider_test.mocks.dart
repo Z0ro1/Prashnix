@@ -7,7 +7,7 @@
 import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:streak/features/auth/data/repositories/auth_repository.dart'
+import 'package:prashnix/features/auth/data/repositories/auth_repository.dart'
     as _i3;
 import 'package:supabase_flutter/supabase_flutter.dart' as _i2;
 
@@ -111,6 +111,23 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
               #avatarId: avatarId,
               #district: district,
             }),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<Map<String, dynamic>?> fetchUserProfile(String? userId) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchUserProfile, [userId]),
+            returnValue: _i4.Future<Map<String, dynamic>?>.value(),
+          )
+          as _i4.Future<Map<String, dynamic>?>);
+
+  @override
+  _i4.Future<void> resetPasswordForEmail({required String? email}) =>
+      (super.noSuchMethod(
+            Invocation.method(#resetPasswordForEmail, [], {#email: email}),
             returnValue: _i4.Future<void>.value(),
             returnValueForMissingStub: _i4.Future<void>.value(),
           )

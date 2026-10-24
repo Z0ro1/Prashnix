@@ -1,6 +1,6 @@
-# streak
+# Prashnix
 
-A new Flutter project.
+Gamified Exam Preparation App.
 
 ## Getting Started
 

@@ -41,7 +41,7 @@ final class AuthNotifierProvider
   }
 }
 
-String _$authNotifierHash() => r'f0255d1a38f9eb793591d4da6d8b970af67e4ff4';
+String _$authNotifierHash() => r'07fd5f74743b6bb4a21faf27b85d03d1f3fd0d39';
 
 abstract class _$AuthNotifier extends $Notifier<AuthStateData> {
   AuthStateData build();
@@ -65,8 +65,9 @@ abstract class _$AuthNotifier extends $Notifier<AuthStateData> {
 final authStateChangesProvider = AuthStateChangesProvider._();
 
 final class AuthStateChangesProvider
-    extends $FunctionalProvider<AsyncValue<dynamic>, dynamic, Stream<dynamic>>
-    with $FutureModifier<dynamic>, $StreamProvider<dynamic> {
+    extends
+        $FunctionalProvider<AsyncValue<AuthState>, AuthState, Stream<AuthState>>
+    with $FutureModifier<AuthState>, $StreamProvider<AuthState> {
   AuthStateChangesProvider._()
     : super(
         from: null,
@@ -83,13 +84,54 @@ final class AuthStateChangesProvider
 
   @$internal
   @override
-  $StreamProviderElement<dynamic> $createElement($ProviderPointer pointer) =>
+  $StreamProviderElement<AuthState> $createElement($ProviderPointer pointer) =>
       $StreamProviderElement(pointer);
 
   @override
-  Stream<dynamic> create(Ref ref) {
+  Stream<AuthState> create(Ref ref) {
     return authStateChanges(ref);
   }
 }
 
-String _$authStateChangesHash() => r'1885c8ad2ffa6066e0fb5d475a59395d6968382d';
+String _$authStateChangesHash() => r'733cd8635a5df574df8301e06afa7efdf160c30e';
+
+@ProviderFor(userProfile)
+final userProfileProvider = UserProfileProvider._();
+
+final class UserProfileProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, dynamic>?>,
+          Map<String, dynamic>?,
+          FutureOr<Map<String, dynamic>?>
+        >
+    with
+        $FutureModifier<Map<String, dynamic>?>,
+        $FutureProvider<Map<String, dynamic>?> {
+  UserProfileProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userProfileProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userProfileHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<Map<String, dynamic>?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Map<String, dynamic>?> create(Ref ref) {
+    return userProfile(ref);
+  }
+}
+
+String _$userProfileHash() => r'4be581bb85a206650b35e0e0161623b4c2302c16';

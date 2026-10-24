@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/profile/presentation/providers/settings_provider.dart';
 import '../constants/app_constants.dart';
 
-enum ButtonVariant { primaryMint, secondaryNavy, outline, disabled }
+enum ButtonVariant { primaryMint, primaryGreen, secondaryNavy, outline, disabled, success, error }
 
 class CustomButton extends ConsumerStatefulWidget {
   final String text;
@@ -63,6 +63,12 @@ class _CustomButtonState extends ConsumerState<CustomButton> {
     switch (widget.variant) {
       case ButtonVariant.primaryMint:
         return AppColors.featherGreen;
+      case ButtonVariant.primaryGreen:
+        return AppColors.primaryGreen;
+      case ButtonVariant.success:
+        return AppColors.success;
+      case ButtonVariant.error:
+        return AppColors.error;
       case ButtonVariant.secondaryNavy:
         return AppColors.skyBlue;
       case ButtonVariant.outline:
@@ -74,28 +80,13 @@ class _CustomButtonState extends ConsumerState<CustomButton> {
     }
   }
 
-  Color _getShadowColor(BuildContext context) {
-    if (widget.shadowColor != null) return widget.shadowColor!;
-    switch (widget.variant) {
-      case ButtonVariant.primaryMint:
-        return AppColors.featherGreenShadow;
-      case ButtonVariant.secondaryNavy:
-        return AppColors.skyBlueShadow;
-      case ButtonVariant.outline:
-        return Theme.of(context).brightness == Brightness.dark 
-            ? AppColors.borderDark 
-            : AppColors.borderLight;
-      case ButtonVariant.disabled:
-        return Theme.of(context).brightness == Brightness.dark 
-            ? AppColors.surfaceDark 
-            : AppColors.borderLight;
-    }
-  }
-
   Color _getTextColor(BuildContext context) {
     if (widget.textColor != null) return widget.textColor!;
     switch (widget.variant) {
       case ButtonVariant.primaryMint:
+      case ButtonVariant.primaryGreen:
+      case ButtonVariant.success:
+      case ButtonVariant.error:
       case ButtonVariant.secondaryNavy:
         return Colors.white;
       case ButtonVariant.outline:
@@ -124,10 +115,9 @@ class _CustomButtonState extends ConsumerState<CustomButton> {
   @override
   Widget build(BuildContext context) {
     final bool isActuallyDisabled = widget.variant == ButtonVariant.disabled || widget.isLoading;
-    final double currentElevation = _isPressed || isActuallyDisabled ? 0 : widget.elevation;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final baseColor = _getBaseColor(context);
-    final shadowColor = _getShadowColor(context);
     final textColor = _getTextColor(context);
 
     final content = Center(
@@ -149,8 +139,8 @@ class _CustomButtonState extends ConsumerState<CustomButton> {
                   const SizedBox(width: AppConstants.paddingSmall),
                 ],
                 Text(
-                  widget.text.toUpperCase(),
-                  style: AppTypography.button.copyWith(
+                  widget.text, // Removed uppercase for a cleaner look
+                  style: AppTypography.labelLarge.copyWith(
                     color: textColor,
                   ),
                 ),
@@ -162,33 +152,25 @@ class _CustomButtonState extends ConsumerState<CustomButton> {
       onPointerDown: _onPointerDown,
       onPointerUp: _onPointerUp,
       onPointerCancel: _onPointerCancel,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Shadow / 3D Base Layer
-          Container(
-            height: 56 + widget.elevation,
-            margin: EdgeInsets.only(top: widget.elevation),
-            decoration: BoxDecoration(
-              color: shadowColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          
-          // Top interactive layer
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 70),
-            curve: Curves.easeOut,
-            height: 56,
-            margin: EdgeInsets.only(top: currentElevation, bottom: widget.elevation - currentElevation),
-            decoration: BoxDecoration(
-              color: baseColor,
-              borderRadius: BorderRadius.circular(16),
-              border: _getBorder(context),
-            ),
-            child: content,
-          ),
-        ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        height: 56,
+        transform: Matrix4.diagonal3Values(
+          _isPressed ? 0.97 : 1.0, 
+          _isPressed ? 0.97 : 1.0, 
+          1.0
+        ),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActuallyDisabled ? (isDark ? AppColors.surfaceDimDark : AppColors.surfaceDimLight) : baseColor,
+          borderRadius: BorderRadius.circular(16),
+          border: _getBorder(context),
+          boxShadow: isActuallyDisabled || _isPressed || widget.variant == ButtonVariant.outline
+              ? null
+              : AppColors.softCardShadow,
+        ),
+        child: content,
       ),
     );
   }

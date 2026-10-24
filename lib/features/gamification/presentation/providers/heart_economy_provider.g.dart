@@ -40,7 +40,7 @@ final class HeartEconomyProvider extends $NotifierProvider<HeartEconomy, int> {
   }
 }
 
-String _$heartEconomyHash() => r'6a309abc6871bd2dbf83e9ed8c3cb1785965d04d';
+String _$heartEconomyHash() => r'aeace34acbf2cf5cabf6a94ffbcef2c87f87264f';
 
 abstract class _$HeartEconomy extends $Notifier<int> {
   int build();

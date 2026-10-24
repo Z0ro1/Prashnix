@@ -29,7 +29,6 @@ class CloudSyncRepository {
 
     final syncData = {
       'total_xp': xp,
-      'weekly_xp': xp, // Weekly would need proper logic on DB via RPC, passing same for now
       'streak_count': streak,
       'current_hearts': hearts,
       'updated_at': DateTime.now().toIso8601String(),
@@ -46,7 +45,7 @@ class CloudSyncRepository {
 
     try {
       // Network available: Try syncing
-      await _supabase.from('profiles').update(syncData).eq('id', user.id);
+      await _supabase.from('profiles').upsert({'id': user.id, ...syncData});
       
       // Successfully synced, clear any pending cache
       await _progressRepository.saveLocalState(_pendingSyncKey, '');
@@ -68,7 +67,7 @@ class CloudSyncRepository {
 
     try {
       final syncData = jsonDecode(pendingDataStr) as Map<String, dynamic>;
-      await _supabase.from('profiles').update(syncData).eq('id', user.id);
+      await _supabase.from('profiles').upsert({'id': user.id, ...syncData});
       
       // Clear cache on success
       await _progressRepository.saveLocalState(_pendingSyncKey, '');
@@ -77,13 +76,13 @@ class CloudSyncRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getDistrictLeaderboard(String district, {int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getDistrictLeaderboard(String district, {int limit = 30}) async {
     try {
       final response = await _supabase
           .from('profiles')
-          .select()
+          .select('id, username, avatar_id, district, total_xp, weekly_xp, streak_count')
           .eq('district', district)
-          .order('weekly_xp', ascending: false)
+          .order('total_xp', ascending: false)
           .limit(limit);
           
       return List<Map<String, dynamic>>.from(response);
@@ -92,12 +91,26 @@ class CloudSyncRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getGlobalLeaderboard({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getGlobalLeaderboard({int limit = 30}) async {
     try {
       final response = await _supabase
           .from('profiles')
-          .select()
-          .order('weekly_xp', ascending: false)
+          .select('id, username, avatar_id, district, total_xp, weekly_xp, streak_count')
+          .order('total_xp', ascending: false)
+          .limit(limit);
+          
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getStreakLeaderboard({int limit = 10}) async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, username, avatar_id, district, total_xp, weekly_xp, streak_count')
+          .order('streak_count', ascending: false)
           .limit(limit);
           
       return List<Map<String, dynamic>>.from(response);

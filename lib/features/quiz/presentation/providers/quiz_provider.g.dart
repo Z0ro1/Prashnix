@@ -41,7 +41,7 @@ final class QuizNotifierProvider
   }
 }
 
-String _$quizNotifierHash() => r'71edfaeac467150e41db176a06e23eddadfbcd78';
+String _$quizNotifierHash() => r'29cf23dd554b5a9985b39971fb1b1280a48f8236';
 
 abstract class _$QuizNotifier extends $Notifier<QuizState> {
   QuizState build();

@@ -13,7 +13,7 @@ part of 'skill_tree_provider.dart';
 final skillTreeProvider = SkillTreeNotifierProvider._();
 
 final class SkillTreeNotifierProvider
-    extends $NotifierProvider<SkillTreeNotifier, List<SkillUnit>> {
+    extends $AsyncNotifierProvider<SkillTreeNotifier, List<SkillUnit>> {
   SkillTreeNotifierProvider._()
     : super(
         from: null,
@@ -31,29 +31,21 @@ final class SkillTreeNotifierProvider
   @$internal
   @override
   SkillTreeNotifier create() => SkillTreeNotifier();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<SkillUnit> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<SkillUnit>>(value),
-    );
-  }
 }
 
-String _$skillTreeNotifierHash() => r'b300e32a2a7266945fdb9e66666b85f27761ce79';
+String _$skillTreeNotifierHash() => r'fc439e088a5a6ab9c82c384e803ac63e0e5462ba';
 
-abstract class _$SkillTreeNotifier extends $Notifier<List<SkillUnit>> {
-  List<SkillUnit> build();
+abstract class _$SkillTreeNotifier extends $AsyncNotifier<List<SkillUnit>> {
+  FutureOr<List<SkillUnit>> build();
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<List<SkillUnit>, List<SkillUnit>>;
+    final ref = this.ref as $Ref<AsyncValue<List<SkillUnit>>, List<SkillUnit>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<List<SkillUnit>, List<SkillUnit>>,
-              List<SkillUnit>,
+              AnyNotifier<AsyncValue<List<SkillUnit>>, List<SkillUnit>>,
+              AsyncValue<List<SkillUnit>>,
               Object?,
               Object?
             >;

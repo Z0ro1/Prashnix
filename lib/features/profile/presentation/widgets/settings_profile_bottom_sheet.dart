@@ -1,84 +1,101 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../gamification/presentation/screens/profile_screen.dart';
-import '../screens/settings_screen.dart';
-import '../screens/saved_questions_screen.dart';
+import '../../../../core/theme/text_styles.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsProfileBottomSheet {
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: const BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
+      barrierColor: Colors.black.withValues(alpha: 0.8),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F1115).withValues(alpha: 0.9),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildOption(
-              context,
-              icon: Icons.person_rounded,
-              label: 'Profile & Streaks',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildOption(
-              context,
-              icon: Icons.bookmarks_rounded,
-              label: 'Saved Questions',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SavedQuestionsScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildOption(
-              context,
-              icon: Icons.settings_rounded,
-              label: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
-              },
-            ),
-          ],
+              const SizedBox(height: 24),
+              _buildOption(
+                context,
+                icon: Icons.person_rounded,
+                label: 'Profile & Streaks',
+                color: AppColors.primaryMint,
+                onTap: () {
+                  context.pop();
+                  context.push('/profile');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildOption(
+                context,
+                icon: Icons.bookmarks_rounded,
+                label: 'Saved Questions',
+                color: AppColors.canaryYellow,
+                onTap: () {
+                  context.pop();
+                  context.push('/saved_questions');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildOption(
+                context,
+                icon: Icons.settings_rounded,
+                label: 'Settings',
+                color: AppColors.skyBlue,
+                onTap: () {
+                  context.pop();
+                  context.push('/settings');
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  static Widget _buildOption(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+  static Widget _buildOption(BuildContext context, {required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200, width: 2),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.textPrimary, size: 28),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
             const SizedBox(width: 16),
-            Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Text(label, style: AppTextStyles.h3.copyWith(color: Colors.white)),
             const Spacer(),
-            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white30),
           ],
         ),
       ),

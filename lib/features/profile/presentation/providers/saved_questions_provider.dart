@@ -18,7 +18,7 @@ class SavedQuestionsNotifier extends _$SavedQuestionsNotifier {
     return await _repo.getSavedQuestions();
   }
 
-  Future<void> toggleSaveStatus(int questionId) async {
+  Future<void> toggleSaveStatus(String questionId) async {
     final isSaved = await _repo.isQuestionSaved(questionId);
     if (isSaved) {
       await _repo.removeSavedQuestion(questionId);
@@ -26,12 +26,11 @@ class SavedQuestionsNotifier extends _$SavedQuestionsNotifier {
       await _repo.saveQuestion(questionId);
     }
     
-    // Refresh the list
-    state = const AsyncValue.loading();
+    // Refresh the list without dropping the current state (prevents UI flicker)
     state = await AsyncValue.guard(() => _fetchSavedQuestions());
   }
 
-  Future<bool> isSaved(int questionId) async {
+  Future<bool> isSaved(String questionId) async {
     return await _repo.isQuestionSaved(questionId);
   }
 }

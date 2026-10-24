@@ -13,7 +13,7 @@ class AppLifecycleHeartHandler extends ConsumerStatefulWidget {
 
 class _AppLifecycleHeartHandlerState extends ConsumerState<AppLifecycleHeartHandler> with WidgetsBindingObserver {
   // In a real app, this should be fetched from SQLite ProgressRepository on boot
-  DateTime _lastRegenTime = DateTime.now();
+  final DateTime _lastRegenTime = DateTime.now();
 
   @override
   void initState() {

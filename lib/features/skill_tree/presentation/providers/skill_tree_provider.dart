@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'skill_tree_provider.g.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../profile/data/repositories/progress_repository.dart';
+import '../../data/repositories/sync_service.dart';part 'skill_tree_provider.g.dart';
 
 enum NodeStatus { locked, active, completed }
 enum NodeType { standard, milestone }
@@ -83,84 +84,134 @@ class SkillUnit {
 
 @riverpod
 class SkillTreeNotifier extends _$SkillTreeNotifier {
+  final ProgressRepository _repo = ProgressRepository();
+  late final SyncService _syncService = SyncService(progressRepo: _repo);
+
   @override
-  List<SkillUnit> build() {
-    return _generateMockUnits(1);
+  FutureOr<List<SkillUnit>> build() async {
+    return _fetchUnitsFromSupabase();
   }
 
-  List<SkillUnit> _generateMockUnits(int count) {
+  Future<List<SkillUnit>> _fetchUnitsFromSupabase() async {
+    final unitsData = await Supabase.instance.client
+        .from('units')
+        .select()
+        .order('order_index', ascending: true);
+        
+    final nodesData = await Supabase.instance.client
+        .from('nodes')
+        .select()
+        .order('order_index', ascending: true);
+        
+    final lessonsData = await Supabase.instance.client
+        .from('lessons')
+        .select()
+        .order('order_index', ascending: true);
+
     final units = <SkillUnit>[];
     
-    // Duolingo-like vivid colors
-    final colors = [
-      '#58CC02', // Feather Green
-      '#1CB0F6', // Sky Blue
-      '#CE82FF', // Purple
-      '#FF9600', // Fox Orange
-      '#FF4B4B', // Red
-    ];
+    // Group lessons by node_id to find total lessons per node
+    final Map<String, int> nodeTotalLessons = {};
+    for (final lesson in lessonsData) {
+      final nodeId = lesson['node_id'] as String;
+      nodeTotalLessons[nodeId] = (nodeTotalLessons[nodeId] ?? 0) + 1;
+    }
 
-    int globalNodeIndex = 0;
-    // Hardcode an active node at a specific global index
-    final activeGlobalIndex = 2; 
-
-    for (int u = 0; u < count; u++) {
-      final nodes = <SkillNode>[];
-      final nodeCount = 6; // Nodes per unit
+    for (int u = 0; u < unitsData.length; u++) {
+      final unitRow = unitsData[u];
+      final unitId = unitRow['id'] as String;
+      final unitNodesData = nodesData.where((n) => n['unit_id'] == unitId).toList();
       
-      for (int i = 0; i < nodeCount; i++) {
-        final isMilestone = i == nodeCount - 1;
+      final nodes = <SkillNode>[];
+      
+      for (int i = 0; i < unitNodesData.length; i++) {
+        final nodeRow = unitNodesData[i];
+        final nodeId = nodeRow['id'] as String;
+        final isMilestone = nodeRow['node_type'] == 'milestone';
+        
         NodeStatus status;
         
-        if (globalNodeIndex < activeGlobalIndex) {
-          status = NodeStatus.completed;
-        } else if (globalNodeIndex == activeGlobalIndex) {
-          status = NodeStatus.active;
-        } else {
-          status = NodeStatus.locked;
-        }
-
-        // We will resolve icons in UI, just keep simple types here
-        String icon = 'star';
-        if (i % 3 == 1) icon = 'dumbbell';
-        if (isMilestone) icon = 'chest';
-
-        final totalLessons = 4 + (globalNodeIndex % 3);
+        final totalLessons = nodeTotalLessons[nodeId] ?? 0;
         int completedLessons = 0;
         
-        if (status == NodeStatus.completed) {
-          completedLessons = totalLessons;
-        } else if (status == NodeStatus.active) {
-          completedLessons = totalLessons ~/ 2; // Partially fill the progress ring
+        // Retrieve saved progress from SQLite using the real nodeId
+        final savedLessonsStr = await _repo.getLocalState('progress_node_$nodeId') ?? 
+            await _repo.getLocalState('progress_$nodeId');
+        final savedStatusStr = await _repo.getLocalState('status_node_$nodeId') ?? 
+            await _repo.getLocalState('status_$nodeId');
+
+        if (savedLessonsStr != null) {
+          completedLessons = int.parse(savedLessonsStr);
+          if (savedStatusStr == '1') {
+            status = NodeStatus.completed;
+          } else if (completedLessons > 0) {
+            status = NodeStatus.active;
+          } else {
+            status = NodeStatus.locked;
+          }
+        } else {
+           status = NodeStatus.locked;
         }
 
         nodes.add(SkillNode(
-          id: 'node_$globalNodeIndex',
-          title: isMilestone ? 'Unit $u Review' : 'Level ${i + 1}',
-          icon: icon,
+          id: nodeId,
+          title: nodeRow['title'] ?? (isMilestone ? 'Unit Review' : 'Level ${i + 1}'),
+          icon: nodeRow['icon_name'] ?? 'star',
           status: status,
           type: isMilestone ? NodeType.milestone : NodeType.standard,
-          totalLessons: totalLessons,
+          totalLessons: totalLessons == 0 ? 1 : totalLessons,
           completedLessons: completedLessons,
         ));
-        globalNodeIndex++;
       }
-
+      
       units.add(SkillUnit(
-        id: 'unit_$u',
+        id: unitId,
         unitNumber: u + 1,
         sectionNumber: (u ~/ 5) + 1,
-        title: 'Learn basic phrases and greetings',
-        colorHex: colors[u % colors.length],
+        title: unitRow['title'] ?? 'Unit ${u + 1}',
+        colorHex: unitRow['theme_color'] ?? '#58CC02',
         nodes: nodes,
       ));
+    }
+    
+    // Auto-unlock logic based on progress
+    bool foundActive = false;
+    for (int u = 0; u < units.length; u++) {
+       for (int i = 0; i < units[u].nodes.length; i++) {
+          if (units[u].nodes[i].status == NodeStatus.active || units[u].nodes[i].status == NodeStatus.completed) {
+              foundActive = true;
+          }
+       }
+    }
+    
+    // If nothing is active (e.g. brand new user), unlock the first node of the first unit
+    if (!foundActive && units.isNotEmpty && units[0].nodes.isNotEmpty) {
+       units[0].nodes[0] = units[0].nodes[0].copyWith(status: NodeStatus.active);
+    } else {
+       // Loop to unlock the next node of the last completed node
+       for (int u = 0; u < units.length; u++) {
+         for (int i = 0; i < units[u].nodes.length; i++) {
+           if (units[u].nodes[i].status == NodeStatus.completed) {
+              if (i + 1 < units[u].nodes.length) {
+                 if (units[u].nodes[i+1].status == NodeStatus.locked) {
+                    units[u].nodes[i+1] = units[u].nodes[i+1].copyWith(status: NodeStatus.active);
+                 }
+              } else if (u + 1 < units.length && units[u+1].nodes.isNotEmpty) {
+                 if (units[u+1].nodes[0].status == NodeStatus.locked) {
+                    units[u+1].nodes[0] = units[u+1].nodes[0].copyWith(status: NodeStatus.active);
+                 }
+              }
+           }
+         }
+       }
     }
 
     return units;
   }
 
   void completeLesson(String nodeId) {
-    final updatedUnits = List<SkillUnit>.from(state);
+    if (state.value == null) return;
+    final updatedUnits = List<SkillUnit>.from(state.value!);
     
     bool foundAndUpdated = false;
     
@@ -200,17 +251,25 @@ class SkillTreeNotifier extends _$SkillTreeNotifier {
         
         updatedUnits[u] = unit.copyWith(nodes: updatedNodes);
         foundAndUpdated = true;
+        
+        // Sync to SQLite and Supabase
+        _syncService.pushNodeProgress(
+          nodeId, 
+          updatedNodes[nodeIndex].completedLessons, 
+          updatedNodes[nodeIndex].status == NodeStatus.completed
+        );
         break;
       }
     }
     
     if (foundAndUpdated) {
-      state = updatedUnits;
+      state = AsyncData(updatedUnits);
     }
   }
 
   void completeNode(String nodeId) {
-    final updatedUnits = List<SkillUnit>.from(state);
+    if (state.value == null) return;
+    final updatedUnits = List<SkillUnit>.from(state.value!);
     
     bool foundAndUpdated = false;
     
@@ -240,12 +299,19 @@ class SkillTreeNotifier extends _$SkillTreeNotifier {
         
         updatedUnits[u] = unit.copyWith(nodes: updatedNodes);
         foundAndUpdated = true;
+        
+        // Sync to SQLite and Supabase
+        _syncService.pushNodeProgress(
+          nodeId, 
+          updatedNodes[nodeIndex].completedLessons, 
+          updatedNodes[nodeIndex].status == NodeStatus.completed
+        );
         break;
       }
     }
     
     if (foundAndUpdated) {
-      state = updatedUnits;
+      state = AsyncData(updatedUnits);
     }
   }
 }

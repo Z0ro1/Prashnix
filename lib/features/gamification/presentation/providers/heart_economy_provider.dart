@@ -63,6 +63,18 @@ class HeartEconomy extends _$HeartEconomy {
     }
   }
 
+  void addHearts(int amount) {
+    final user = ref.read(userStoreProvider);
+    final newHearts = (user.heartCount + amount).clamp(0, HeartEngineService.maxHearts);
+    ref.read(userStoreProvider.notifier).updateHearts(newHearts);
+    
+    _cloudSync.syncProgressToCloud(
+      xp: user.totalXp,
+      streak: user.streakCount,
+      hearts: newHearts,
+    );
+  }
+
   Future<bool> rewardAdWatched() async {
     final user = ref.read(userStoreProvider);
     // Check daily limits
@@ -86,7 +98,7 @@ class HeartEconomy extends _$HeartEconomy {
 
     await repo.saveLocalState('ad_count', (currentCount + 1).toString());
     
-    final newHearts = (user.heartCount + 1).clamp(0, HeartEngineService.maxHearts);
+    final newHearts = (user.heartCount + 2).clamp(0, HeartEngineService.maxHearts);
     ref.read(userStoreProvider.notifier).updateHearts(newHearts);
     
     _cloudSync.syncProgressToCloud(

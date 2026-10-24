@@ -14,7 +14,6 @@ class AppTheme {
         secondary: AppColors.skyBlue,
         surface: AppColors.surfaceLight,
         error: AppColors.targetPink,
-        background: AppColors.backgroundLight,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
       textTheme: TextTheme(
@@ -40,7 +39,6 @@ class AppTheme {
         secondary: AppColors.skyBlue,
         surface: AppColors.surfaceDark,
         error: AppColors.targetPink,
-        background: AppColors.backgroundDark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
       textTheme: TextTheme(

@@ -1,11 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'db_constants.dart';
-import '../constants/seed_data.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -25,24 +22,12 @@ class DatabaseService {
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final dbPath = join(documentsDirectory.path, DbConstants.databaseName);
 
-    // Check if DB exists
-    final exists = await databaseExists(dbPath);
+    // Make sure the parent directory exists
+    try {
+      await Directory(dirname(dbPath)).create(recursive: true);
+    } catch (_) {}
 
-    if (!exists) {
-      // Make sure the parent directory exists
-      try {
-        await Directory(dirname(dbPath)).create(recursive: true);
-      } catch (_) {}
-
-      // Copy from asset
-      ByteData data = await rootBundle.load('assets/database/${DbConstants.databaseName}');
-      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-
-      // Write and flush the bytes
-      await File(dbPath).writeAsBytes(bytes, flush: true);
-    }
-
-    // Open the database
+    // Open the database (this will trigger _onCreate to create empty tables)
     final db = await openDatabase(
       dbPath,
       version: DbConstants.databaseVersion,
@@ -51,39 +36,7 @@ class DatabaseService {
       onUpgrade: _onUpgrade,
     );
 
-    await _seedFirstNodeQuestions(db);
     return db;
-  }
-
-  Future<void> _seedFirstNodeQuestions(Database db) async {
-    final result = await db.query(
-      DbConstants.tableQuestions,
-      where: 'subject_tag = ?',
-      whereArgs: ['First_Node_Demo'],
-      limit: 1,
-    );
-    
-    if (result.isEmpty) {
-      final batch = db.batch();
-      for (final q in SeedData.firstNodeQuestions) {
-        batch.insert(
-          DbConstants.tableQuestions,
-          {
-            'subject_tag': 'First_Node_Demo',
-            'subtopic_tag': q['category'],
-            'question_text': q['question'],
-            'option_a': q['options']['A'],
-            'option_b': q['options']['B'],
-            'option_c': q['options']['C'],
-            'option_d': q['options']['D'],
-            'correct_option': q['correct_ans'],
-            'explanation': q['explanation'],
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      }
-      await batch.commit(noResult: true);
-    }
   }
 
   Future<void> _onConfigure(Database db) async {
@@ -92,9 +45,7 @@ class DatabaseService {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Note: Since we are copying a pre-populated DB, onCreate might not trigger
-    // unless the asset DB is empty or missing tables.
-    // We execute creation scripts just in case to ensure tables exist.
+    // Execute creation scripts to ensure tables exist
     await db.execute(DbConstants.createQuestionsTable);
     await db.execute(DbConstants.createLessonsTable);
     await db.execute(DbConstants.createMistakesTable);
@@ -109,6 +60,58 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(DbConstants.createSavedQuestionsTable);
+    }
+    if (oldVersion < 3) {
+      // Safely delete only the locally cached questions, forcing a re-fetch from Supabase
+      // without destroying user progress!
+      await db.execute('DELETE FROM ${DbConstants.tableQuestions}');
+    }
+    if (oldVersion < 4) {
+      // Version 4 removes ON DELETE CASCADE from mistakes and saved_questions.
+      // SQLite requires recreating the tables to drop a foreign key.
+      
+      // 1. Rename old tables
+      await db.execute('ALTER TABLE ${DbConstants.tableMistakes} RENAME TO old_mistakes');
+      await db.execute('ALTER TABLE ${DbConstants.tableSavedQuestions} RENAME TO old_saved');
+      
+      // 2. Create new tables without foreign keys
+      await db.execute(DbConstants.createMistakesTable);
+      await db.execute(DbConstants.createSavedQuestionsTable);
+      
+      // 3. Copy data safely
+      await db.execute('''
+        INSERT INTO ${DbConstants.tableMistakes} 
+        (id, question_id, user_answer, mistake_count, is_cleared, last_failed_at) 
+        SELECT id, question_id, user_answer, mistake_count, is_cleared, last_failed_at 
+        FROM old_mistakes
+      ''');
+      
+      await db.execute('''
+        INSERT INTO ${DbConstants.tableSavedQuestions} 
+        (id, question_id, saved_at) 
+        SELECT id, question_id, saved_at 
+        FROM old_saved
+      ''');
+      
+      // 4. Drop old tables
+      await db.execute('DROP TABLE old_mistakes');
+      await db.execute('DROP TABLE old_saved');
+      
+      // 5. Re-apply indexes
+      await db.execute(DbConstants.indexMistakesCleared);
+    }
+    if (oldVersion < 5) {
+      // Version 5 changes question IDs to TEXT (UUIDs). We must drop the tables to recreate them with TEXT schemas.
+      await db.execute('DROP TABLE IF EXISTS ${DbConstants.tableMistakes}');
+      await db.execute('DROP TABLE IF EXISTS ${DbConstants.tableSavedQuestions}');
+      await db.execute('DROP TABLE IF EXISTS ${DbConstants.tableQuestions}');
+      
+      await db.execute(DbConstants.createQuestionsTable);
+      await db.execute(DbConstants.createMistakesTable);
+      await db.execute(DbConstants.createSavedQuestionsTable);
+      
+      await db.execute(DbConstants.indexQuestionsSubject);
+      await db.execute(DbConstants.indexMistakesCleared);
     }
   }
 }

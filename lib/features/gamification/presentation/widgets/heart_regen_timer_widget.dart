@@ -58,9 +58,9 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLighter,
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.surfaceLight),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -74,7 +74,7 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
           Text(
             '+1 in $minutes:$seconds',
             style: AppTextStyles.label.copyWith(
-              color: AppColors.textSecondary,
+              color: Colors.white70,
               fontWeight: FontWeight.bold,
             ),
           ),

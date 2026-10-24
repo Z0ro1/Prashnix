@@ -1,15 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/models/question_model.dart';
-import '../../../gamification/presentation/providers/heart_economy_provider.dart';
 import '../../../profile/presentation/providers/settings_provider.dart';
 import '../../data/repositories/mistake_repository.dart';
 import '../../../profile/data/repositories/progress_repository.dart';
 import '../../data/repositories/question_repository.dart';
 import '../../../../core/state/user_state.dart';
-import '../../../../core/database/database_service.dart';
-import '../../../../core/database/db_constants.dart';
 import '../../../skill_tree/presentation/providers/skill_tree_provider.dart';
+import '../../../../core/config/supabase_config.dart';
 
 part 'quiz_provider.g.dart';
 
@@ -86,44 +84,8 @@ class QuizNotifier extends _$QuizNotifier {
         final currentLevelStr = await progressRepo.getLocalState('highest_unlocked_level') ?? '0';
         int currentLevel = int.tryParse(currentLevelStr) ?? 0;
         newQuestions = await repo.getWeeklyTestQuestions(100, currentLevel);
-      } else if (nodeId.startsWith('node_')) {
-        // Fetch questions mapped to this specific node
-        // Our repo uses subject_tag like 'node_0' for this setup
-        // Let's modify the query to use the subject tag directly
-        final db = await DatabaseService().database;
-        final maps = await db.query(
-          DbConstants.tableQuestions,
-          where: 'subject_tag = ?',
-          whereArgs: [nodeId],
-          orderBy: 'RANDOM()',
-          limit: 20,
-        );
-        newQuestions = maps.map((map) => QuestionModel.fromMap(map)).toList();
-        
-        // Fallback if empty
-        if (newQuestions.isEmpty) {
-          newQuestions = await repo.getRandomSprintQuestions('First_Node_Demo', 10);
-        }
       } else {
-        // Fallback for other nodes to use random questions
-        newQuestions = await repo.getRandomSprintQuestions('First_Node_Demo', 10);
-      }
-      
-      if (newQuestions.isEmpty) {
-        // Fallback mock question if DB is empty or fails
-        newQuestions = [
-          const QuestionModel(
-            id: 1,
-            subjectTag: 'Demo',
-            questionText: 'Mock Question: What is 2+2?',
-            optionA: '3',
-            optionB: '4',
-            optionC: '5',
-            optionD: '6',
-            correctOption: 'B',
-            explanation: 'Basic math',
-          )
-        ];
+        newQuestions = await repo.getQuestionsByNode(nodeId);
       }
       
       state = state.copyWith(
@@ -138,21 +100,8 @@ class QuizNotifier extends _$QuizNotifier {
       );
     } catch (e) {
       print('Error loading questions: $e');
-      final fallbackQuestions = [
-        const QuestionModel(
-          id: 1,
-          subjectTag: 'Error',
-          questionText: 'Database Error. What is 2+2?',
-          optionA: '3',
-          optionB: '4',
-          optionC: '5',
-          optionD: '6',
-          correctOption: 'B',
-          explanation: 'Basic math',
-        )
-      ];
       state = state.copyWith(
-        questions: fallbackQuestions,
+        questions: [],
         isLoading: false,
         currentIndex: 0,
         clearSelectedOption: true,
@@ -167,6 +116,9 @@ class QuizNotifier extends _$QuizNotifier {
   void selectOption(String optionIndex) {
     // optionIndex like 'A', 'B', 'C', 'D'
     if (state.status == QuizStatus.unanswered || state.status == QuizStatus.selected) {
+      if (ref.read(settingsProvider).hapticsEnabled) {
+        HapticFeedback.selectionClick();
+      }
       state = state.copyWith(
         selectedOption: optionIndex,
         status: QuizStatus.selected,
@@ -193,7 +145,7 @@ class QuizNotifier extends _$QuizNotifier {
       );
     } else {
       if (ref.read(settingsProvider).hapticsEnabled) {
-        HapticFeedback.heavyImpact();
+        HapticFeedback.vibrate(); // Long buzz for incorrect answer
       }
       state = state.copyWith(
         status: QuizStatus.checkedIncorrect,
@@ -201,9 +153,12 @@ class QuizNotifier extends _$QuizNotifier {
       
       // Log mistake to MistakeRepository
       if (question.id != null) {
-        final MistakeRepository _mistakeRepo = MistakeRepository();
-        _mistakeRepo.logMistake(question.id!, state.selectedOption!);
+        final MistakeRepository mistakeRepo = MistakeRepository();
+        mistakeRepo.logMistake(question.id!, state.selectedOption!);
       }
+
+      // Deduct heart
+      ref.read(userStoreProvider.notifier).useHeart();
       
       // Endless Retry: Re-append the failed question to the end of the queue
       final updatedQuestions = List<QuestionModel>.from(state.questions)..add(question);
@@ -212,6 +167,11 @@ class QuizNotifier extends _$QuizNotifier {
   }
 
   void nextQuestion() {
+    if (ref.read(userStoreProvider).heartCount <= 0) {
+      state = state.copyWith(status: QuizStatus.outOfHearts);
+      return;
+    }
+
     if (state.currentIndex < state.questions.length - 1) {
       state = state.copyWith(
         currentIndex: state.currentIndex + 1,
@@ -222,7 +182,14 @@ class QuizNotifier extends _$QuizNotifier {
       // Quiz finished
       if (state.correctAnswers == state.questions.length) { // Dynamic perfect score base
         // Perfect bonus
+        if (ref.read(settingsProvider).hapticsEnabled) {
+          HapticFeedback.heavyImpact();
+        }
         state = state.copyWith(baseXpEarned: state.baseXpEarned + 50);
+      } else {
+        if (ref.read(settingsProvider).hapticsEnabled) {
+          HapticFeedback.mediumImpact();
+        }
       }
       
       // Update User Store XP
@@ -256,8 +223,11 @@ class QuizNotifier extends _$QuizNotifier {
       await progressRepo.saveLocalState('highest_unlocked_level', currentLevel.toString());
 
       // Trigger cloud sync
-      // Ideally we should import CloudSyncRepository here but to keep it simple and decoupled
-      // we'll leave it to a global listener or direct call if available.
+      final supabase = SupabaseConfig.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        await supabase.from('profiles').update({'weekly_test_level': currentLevel}).eq('id', userId);
+      }
     } catch (e) {
       // Ignore errors for now
     }

@@ -1,5 +1,5 @@
 class QuestionModel {
-  final int? id;
+  final String? id;
   final String subjectTag;
   final String? subtopicTag;
   final String questionText;
@@ -29,7 +29,7 @@ class QuestionModel {
 
   factory QuestionModel.fromMap(Map<String, dynamic> map) {
     return QuestionModel(
-      id: map['id'] as int?,
+      id: map['id'] as String?,
       subjectTag: map['subject_tag'] as String,
       subtopicTag: map['subtopic_tag'] as String?,
       questionText: map['question_text'] as String,

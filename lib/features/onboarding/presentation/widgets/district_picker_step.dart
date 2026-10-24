@@ -5,6 +5,7 @@ import '../../../../core/constants/district_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../providers/onboarding_provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class DistrictPickerStep extends ConsumerStatefulWidget {
   const DistrictPickerStep({super.key});
@@ -51,30 +52,32 @@ class _DistrictPickerStepState extends ConsumerState<DistrictPickerStep> {
           const SizedBox(height: 24),
           Text(
             'Select Target District',
-            style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.h2.copyWith(color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'Which district leaderboard do you want to compete in?',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.body.copyWith(color: Colors.white70),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               controller: _searchController,
-              style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+              textInputAction: TextInputAction.search,
+              style: AppTextStyles.body.copyWith(color: Colors.white),
               decoration: const InputDecoration(
-                icon: Icon(Icons.search, color: AppColors.textSecondary),
+                icon: Icon(Icons.search, color: Colors.white54),
                 border: InputBorder.none,
                 hintText: 'Search districts...',
-                hintStyle: TextStyle(color: AppColors.textSecondary),
+                hintStyle: TextStyle(color: Colors.white30),
               ),
             ),
           ),
@@ -82,6 +85,7 @@ class _DistrictPickerStepState extends ConsumerState<DistrictPickerStep> {
           Expanded(
             child: ListView.builder(
               physics: const BouncingScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               itemCount: _filteredDistricts.length,
               itemBuilder: (context, index) {
                 final district = _filteredDistricts[index];
@@ -102,10 +106,10 @@ class _DistrictPickerStepState extends ConsumerState<DistrictPickerStep> {
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primaryMint.withValues(alpha: 0.1) : AppColors.surfaceLight,
+                          color: isSelected ? AppColors.primaryMint.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? AppColors.primaryMint : Colors.transparent,
+                            color: isSelected ? AppColors.primaryMint : Colors.white.withValues(alpha: 0.05),
                             width: 2,
                           ),
                         ),
@@ -115,7 +119,7 @@ class _DistrictPickerStepState extends ConsumerState<DistrictPickerStep> {
                               child: Text(
                                 district,
                                 style: AppTextStyles.body.copyWith(
-                                  color: isSelected ? AppColors.primaryMint : AppColors.textPrimary,
+                                  color: isSelected ? AppColors.primaryMint : Colors.white,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
@@ -127,7 +131,7 @@ class _DistrictPickerStepState extends ConsumerState<DistrictPickerStep> {
                       ),
                     ),
                   ),
-                );
+                ).animate(delay: (index * 30).ms).slideX(begin: 0.1, duration: 300.ms, curve: Curves.easeOut).fadeIn(duration: 300.ms);
               },
             ),
           ),

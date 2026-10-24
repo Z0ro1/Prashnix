@@ -1,8 +1,10 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter/services.dart';
+import 'settings_provider.dart';
 import '../../../../core/models/question_model.dart';
 import '../../../gamification/presentation/providers/heart_economy_provider.dart';
-import '../../data/repositories/mistake_repository.dart';
-import '../providers/mistake_provider.dart';
+import '../../../quiz/data/repositories/mistake_repository.dart';
+import 'mistake_provider.dart';
 
 part 'retry_sprint_provider.g.dart';
 
@@ -54,6 +56,9 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
 
   void selectOption(String optionIndex) {
     if (state.status == RetryStatus.unanswered || state.status == RetryStatus.selected) {
+      if (ref.read(settingsProvider).hapticsEnabled) {
+        HapticFeedback.selectionClick();
+      }
       state = state.copyWith(
         selectedOption: optionIndex,
         status: RetryStatus.selected,
@@ -70,6 +75,9 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
     final isCorrect = state.selectedOption == question.correctOption;
 
     if (isCorrect) {
+      if (ref.read(settingsProvider).hapticsEnabled) {
+        HapticFeedback.mediumImpact();
+      }
       // Clear mistake and award +1 Heart immediately
       if (question.id != null) {
         final MistakeRepository repo = MistakeRepository();
@@ -82,6 +90,9 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
         clearedCount: state.clearedCount + 1,
       );
     } else {
+      if (ref.read(settingsProvider).hapticsEnabled) {
+        HapticFeedback.vibrate(); // Long buzz for incorrect answer
+      }
       // User failed again. Increment mistake_count in repo. No heart deduction.
       if (question.id != null) {
         final MistakeRepository repo = MistakeRepository();
@@ -108,7 +119,7 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
     } else {
       // Finished
       // Refresh the mistake bank
-      ref.read(mistakeNotifierProvider.notifier).build(); // triggers refresh basically, or expose a refresh method.
+      ref.read(mistakeProvider.notifier).build(); // triggers refresh basically, or expose a refresh method.
       
       state = state.copyWith(status: RetryStatus.finished);
     }

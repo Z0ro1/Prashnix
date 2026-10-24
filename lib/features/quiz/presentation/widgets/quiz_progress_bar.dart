@@ -13,28 +13,58 @@ class QuizProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We add 1 because currentIndex is 0-based. So 0/25 -> 1/25 fill initially (or 0 if you want)
-    // Actually, filling it as you complete makes sense. If currentIndex == 0, progress = 0.
-    // If you want it to show current step, (currentIndex + 1) / totalQuestions is good.
-    final progress = (currentIndex) / totalQuestions; 
+    final progress = totalQuestions == 0 ? 0.0 : (currentIndex) / totalQuestions; 
     
     return Container(
-      height: 12,
+      height: 14,
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(6),
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 4,
+          ),
+        ],
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final width = constraints.maxWidth * progress;
           return Stack(
             children: [
+              // Neon Glow
               AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-                width: constraints.maxWidth * progress,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOutCubic,
+                width: width,
                 decoration: BoxDecoration(
-                  color: AppColors.success, // User explicitly asked to keep it green
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withValues(alpha: 0.6),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+              // Inner Core
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOutCubic,
+                width: width,
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+                ),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 1, bottom: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -44,3 +74,4 @@ class QuizProgressBar extends StatelessWidget {
     );
   }
 }
+

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class DuolingoButton extends StatefulWidget {
   final Widget child;
@@ -91,11 +90,6 @@ class _DuolingoButtonState extends State<DuolingoButton> with SingleTickerProvid
     // Calculate color based on state
     Color actualBaseColor = widget.baseColor;
     Color actualShadowColor = widget.shadowColor;
-    
-    if (widget.isLocked) {
-      actualBaseColor = AppColors.surfaceLight;
-      actualShadowColor = AppColors.surfaceLight;
-    }
 
     Widget buttonContent = Container(
       width: widget.width,
@@ -104,10 +98,6 @@ class _DuolingoButtonState extends State<DuolingoButton> with SingleTickerProvid
         color: actualBaseColor,
         shape: widget.shape,
         borderRadius: widget.shape == BoxShape.rectangle ? widget.borderRadius : null,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: widget.isLocked ? 0.3 : 0.6),
-          width: 3,
-        ),
         boxShadow: [
           // The solid 3D shadow
           BoxShadow(
@@ -128,7 +118,7 @@ class _DuolingoButtonState extends State<DuolingoButton> with SingleTickerProvid
       animation: _pulseController,
       builder: (context, child) {
         final scale = widget.isActive ? 1.0 + (_pulseController.value * 0.05) : 1.0;
-        final glowOpacity = widget.isActive ? (_pulseController.value * 0.5) : 0.0;
+        final glowOpacity = widget.isActive ? 0.3 + (_pulseController.value * 0.7) : 0.0;
         
         return Transform.scale(
           scale: scale,
@@ -142,14 +132,15 @@ class _DuolingoButtonState extends State<DuolingoButton> with SingleTickerProvid
                 // Outer glow ring for active nodes
                 if (widget.isActive)
                   Container(
-                    width: widget.width + 16,
-                    height: widget.height + 16,
+                    margin: EdgeInsets.only(top: widget.elevation - currentElevation),
+                    width: widget.width + 30,
+                    height: widget.height + 30,
                     decoration: BoxDecoration(
                       shape: widget.shape,
                       borderRadius: widget.shape == BoxShape.rectangle ? widget.borderRadius : null,
                       border: Border.all(
-                        color: widget.baseColor.withOpacity(0.5 * glowOpacity),
-                        width: 4,
+                        color: const Color(0xFFFFD700).withValues(alpha: glowOpacity),
+                        width: 10,
                       ),
                     ),
                   ),

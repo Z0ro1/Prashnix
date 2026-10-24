@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../constants/app_constants.dart';
-
 class AppCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -57,30 +56,15 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
-    final backgroundColor = isDark ? AppColors.surfaceDark : AppColors.backgroundLight;
-
-    final cardDecoration = BoxDecoration(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: borderColor,
-        width: 2,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: borderColor,
-          offset: const Offset(0, 4),
-          blurRadius: 0,
-          spreadRadius: 0,
-        ),
-      ],
-    );
-
     final cardWidget = Container(
       padding: widget.padding,
-      decoration: cardDecoration,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? AppColors.surfaceDark 
+            : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppColors.softCardShadow,
+      ),
       child: widget.child,
     );
 

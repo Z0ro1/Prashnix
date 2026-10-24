@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/models/question_model.dart';
+import 'package:flutter/services.dart';
+import '../../../profile/presentation/providers/settings_provider.dart';
 
 part 'timed_exam_provider.g.dart';
 
@@ -96,6 +98,10 @@ class TimedExamNotifier extends _$TimedExamNotifier {
     final newAnswers = Map<int, String>.from(state.answers);
     newAnswers[state.currentIndex] = optionIndex;
     
+    if (ref.read(settingsProvider).hapticsEnabled) {
+      HapticFeedback.selectionClick();
+    }
+    
     state = state.copyWith(answers: newAnswers);
   }
 
@@ -115,6 +121,9 @@ class TimedExamNotifier extends _$TimedExamNotifier {
 
   void submitExam() {
     _timer?.cancel();
+    if (ref.read(settingsProvider).hapticsEnabled) {
+      HapticFeedback.heavyImpact();
+    }
     state = state.copyWith(status: TimedExamStatus.manuallySubmitted);
   }
 
@@ -125,7 +134,7 @@ class TimedExamNotifier extends _$TimedExamNotifier {
     for (int i = 0; i < count; i++) {
       list.add(
         QuestionModel(
-          id: i,
+          id: i.toString(),
           subjectTag: subjects[i % subjects.length],
           questionText: 'Exam Question ${i + 1}: What is the correct answer?',
           optionA: 'Option A',

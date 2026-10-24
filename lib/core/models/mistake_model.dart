@@ -1,6 +1,6 @@
 class MistakeModel {
   final int? id;
-  final int questionId;
+  final String questionId;
   final String userAnswer;
   final int mistakeCount;
   final bool isCleared;
@@ -18,7 +18,7 @@ class MistakeModel {
   factory MistakeModel.fromMap(Map<String, dynamic> map) {
     return MistakeModel(
       id: map['id'] as int?,
-      questionId: map['question_id'] as int,
+      questionId: map['question_id'] as String,
       userAnswer: map['user_answer'] as String,
       mistakeCount: map['mistake_count'] as int? ?? 1,
       isCleared: (map['is_cleared'] as int? ?? 0) == 1,

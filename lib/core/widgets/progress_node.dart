@@ -64,25 +64,38 @@ class _ProgressNodeState extends State<ProgressNode> with SingleTickerProviderSt
       child: AnimatedBuilder(
         animation: _glowAnimation,
         builder: (context, child) {
+          final isLocked = widget.state == NodeState.locked;
           return Container(
             width: widget.size,
             height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getBackgroundColor(),
+              color: isLocked ? AppColors.surfaceDimLight : AppColors.surfaceLight,
               border: Border.all(
                 color: _getBorderColor(),
-                width: 4,
+                width: 3,
               ),
-              boxShadow: widget.state == NodeState.active
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primaryMint.withValues(alpha: 0.5),
-                        blurRadius: _glowAnimation.value,
-                        spreadRadius: _glowAnimation.value / 2,
-                      )
-                    ]
-                  : null,
+              boxShadow: [
+                // 3D Bottom Shadow
+                BoxShadow(
+                  color: _getShadowColor(),
+                  blurRadius: 0,
+                  offset: const Offset(0, 6),
+                ),
+                // Soft ambient shadow
+                const BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+                // Optional glow for active state
+                if (widget.state == NodeState.active)
+                  BoxShadow(
+                    color: AppColors.primaryMint.withValues(alpha: 0.4),
+                    blurRadius: _glowAnimation.value,
+                    spreadRadius: _glowAnimation.value / 3,
+                  )
+              ],
             ),
             child: Center(
               child: _getIcon(),
@@ -93,35 +106,34 @@ class _ProgressNodeState extends State<ProgressNode> with SingleTickerProviderSt
     );
   }
 
-  Color _getBackgroundColor() {
-    switch (widget.state) {
-      case NodeState.active:
-        return AppColors.cardSurface;
-      case NodeState.completed:
-        return AppColors.primaryMint;
-      case NodeState.locked:
-        return AppColors.surfaceLight;
-    }
-  }
-
   Color _getBorderColor() {
     switch (widget.state) {
       case NodeState.active:
       case NodeState.completed:
         return AppColors.primaryMint;
       case NodeState.locked:
-        return AppColors.textSecondary.withValues(alpha: 0.3);
+        return AppColors.borderLight;
+    }
+  }
+
+  Color _getShadowColor() {
+    switch (widget.state) {
+      case NodeState.active:
+      case NodeState.completed:
+        return AppColors.primaryGreenDark;
+      case NodeState.locked:
+        return AppColors.borderLight;
     }
   }
 
   Widget _getIcon() {
     switch (widget.state) {
       case NodeState.active:
-        return const Icon(Icons.star, color: AppColors.accentAmber, size: 28);
+        return const Icon(Icons.star_rounded, color: AppColors.accentAmber, size: 28);
       case NodeState.completed:
-        return const Icon(Icons.check, color: AppColors.deepTealNavy, size: 28);
+        return const Icon(Icons.check_rounded, color: AppColors.primaryMint, size: 28);
       case NodeState.locked:
-        return Icon(Icons.lock, color: AppColors.textSecondary.withValues(alpha: 0.5), size: 24);
+        return const Icon(Icons.lock_rounded, color: AppColors.textSecondary, size: 24);
     }
   }
 }
