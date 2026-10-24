@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'app_typography.dart';
 import 'app_colors.dart';
 
-/// Official Duolingo typography styling extracted from the APK & App Text Styles
+/// Official Prashnix typography styling & App Text Styles
 class AppTextStyles {
   AppTextStyles._();
 
   // Extracted Font Families
-  static const String duolingoSans = 'DuolingoSans';
+  static const String prashnixSans = 'PrashnixSans';
   static const String dinNext = 'DINNext';
 
   // -----------------------------------------------------
-  // Official Duolingo Styles extracted from the APK
+  // Official Prashnix Styles
   // -----------------------------------------------------
   // Headings
   static const TextStyle unitTitle = TextStyle(
-    fontFamily: duolingoSans,
+    fontFamily: prashnixSans,
     fontSize: 22,
     fontWeight: FontWeight.w900,
     color: Colors.white,
@@ -24,7 +24,7 @@ class AppTextStyles {
   );
 
   static const TextStyle unitSubtext = TextStyle(
-    fontFamily: duolingoSans,
+    fontFamily: prashnixSans,
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: Colors.white,

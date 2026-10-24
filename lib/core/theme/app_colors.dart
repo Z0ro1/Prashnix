@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Official App & Duolingo Design Colors extracted from the APK.
+/// Official App & Prashnix Design Colors.
 class AppColors {
   AppColors._();
 
   // =====================================================
-  // Official Duolingo Color Palette (Extracted APK)
+  // Official Prashnix Color Palette
   // =====================================================
   // Brand Greens
   static const Color green = Color(0xFF58CC02);
@@ -44,7 +44,7 @@ class AppColors {
   static const Color cardShadowColor = Color(0x1A000000);
 
   // =====================================================
-  // Primary Brand Colors (Aligned with Duolingo Palette)
+  // Primary Brand Colors (Aligned with Prashnix Palette)
   // =====================================================
   static const Color primaryGreen = green;
   static const Color primaryGreenDark = greenShadow;
@@ -65,8 +65,8 @@ class AppColors {
   static const Color borderLight = border;
 
   // Neutral & Background Colors - Dark Mode
-  static const Color backgroundDark = Color(0xFF131F24); // Duolingo dark navy
-  static const Color surfaceDark = Color(0xFF1F2F38);    // Duolingo dark card surface
+  static const Color backgroundDark = Color(0xFF131F24); // Prashnix dark navy
+  static const Color surfaceDark = Color(0xFF1F2F38);    // Prashnix dark card surface
   static const Color surfaceDimDark = Color(0xFF283B46);
   static const Color textPrimaryDark = Color(0xFFF9FAFB);
   static const Color textSecondaryDark = Color(0xFF8B9D9F);

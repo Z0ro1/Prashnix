@@ -10,19 +10,19 @@ import '../../../../features/quiz/presentation/providers/quiz_provider.dart';
 import '../../../../features/quiz/presentation/screens/quiz_screen.dart';
 import '../../../../features/leaderboard/presentation/providers/leaderboard_provider.dart';
 import '../../../../features/profile/presentation/providers/settings_provider.dart';
-import '../components/duo_audio_service.dart';
-import '../components/duo_floating_tooltip.dart';
-import '../components/duo_path_node.dart';
-import '../components/duo_pulsing_ring.dart';
-import '../components/duo_stats_bar.dart';
-import '../components/duo_stepping_dots.dart';
-import '../components/duo_unit_header.dart';
+import '../components/prashnix_audio_service.dart';
+import '../components/prashnix_floating_tooltip.dart';
+import '../components/prashnix_path_node.dart';
+import '../components/prashnix_pulsing_ring.dart';
+import '../components/prashnix_stats_bar.dart';
+import '../components/prashnix_stepping_dots.dart';
+import '../components/prashnix_unit_header.dart';
 import '../providers/skill_tree_provider.dart';
 import '../../data/repositories/sync_service.dart';
-import '../theme/duo_colors.dart';
-import '../theme/duo_text_styles.dart';
+import '../theme/prashnix_colors.dart';
+import '../theme/prashnix_text_styles.dart';
 
-/// Pixel-perfect Duolingo Home / Learning Path Screen integrated with full backend logic.
+/// Pixel-perfect Prashnix Home / Learning Path Screen integrated with full backend logic.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -31,7 +31,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  // Pattern of X horizontal offsets for Duolingo S-curve path
+  // Pattern of X horizontal offsets for Prashnix S-curve path
   static const List<double> _pathCurveOffsets = [
     0.0,    // Center
     55.0,   // Right
@@ -64,14 +64,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Text(
                     'Select Target District',
                     style: TextStyle(
-                      fontFamily: DuoTextStyles.duolingoSans,
+                      fontFamily: PrashnixTextStyles.prashnixSans,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
-                      color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                      color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: isDark ? AppColors.textMutedDark : DuoColors.textSecondary),
+                    icon: Icon(Icons.close, color: isDark ? AppColors.textMutedDark : PrashnixColors.textSecondary),
                     onPressed: () => Navigator.of(ctx).pop(),
                   ),
                 ],
@@ -86,24 +86,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final isSelected = district == currentDistrict;
 
                     return ListTile(
-                      leading: const Icon(Icons.location_on_rounded, color: DuoColors.green),
+                      leading: const Icon(Icons.location_on_rounded, color: PrashnixColors.green),
                       title: Text(
                         district,
                         style: TextStyle(
-                          fontFamily: DuoTextStyles.dinNext,
+                          fontFamily: PrashnixTextStyles.dinNext,
                           fontSize: 16,
                           fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
                           color: isSelected 
-                              ? DuoColors.green 
-                              : (isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary),
+                              ? PrashnixColors.green 
+                              : (isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary),
                         ),
                       ),
                       trailing: isSelected
-                          ? const Icon(Icons.check_circle_rounded, color: DuoColors.green)
+                          ? const Icon(Icons.check_circle_rounded, color: PrashnixColors.green)
                           : null,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        DuoAudioService.playTap();
+                        PrashnixAudioService.playTap();
                         ref.read(userStoreProvider.notifier).updateProfile(selectedDistrict: district);
                         Navigator.of(ctx).pop();
                       },
@@ -138,10 +138,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 'Hearts: $currentHearts / 5',
                 style: TextStyle(
-                  fontFamily: DuoTextStyles.duolingoSans,
+                  fontFamily: PrashnixTextStyles.prashnixSans,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                  color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -149,8 +149,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 'Hearts refill 1 per hour (or fully at midnight IST). You can also practice your mistakes to earn back hearts!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: DuoTextStyles.duolingoSans,
-                  color: isDark ? AppColors.textMutedDark : DuoColors.textSecondary,
+                  fontFamily: PrashnixTextStyles.prashnixSans,
+                  color: isDark ? AppColors.textMutedDark : PrashnixColors.textSecondary,
                   fontSize: 14,
                 ),
               ),
@@ -158,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Practice Mistakes Button
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DuoColors.blue,
+                  backgroundColor: PrashnixColors.blue,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -166,13 +166,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  DuoAudioService.playTap();
+                  PrashnixAudioService.playTap();
                   HeartRefillModalSheet.show(context);
                 },
                 child: const Text(
                   'REFILL OPTIONS & PRACTICE',
                   style: TextStyle(
-                    fontFamily: DuoTextStyles.dinNext,
+                    fontFamily: PrashnixTextStyles.dinNext,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
@@ -182,8 +182,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Watch Ad Button
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: DuoColors.green,
-                  side: const BorderSide(color: DuoColors.green, width: 2),
+                  foregroundColor: PrashnixColors.green,
+                  side: const BorderSide(color: PrashnixColors.green, width: 2),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -192,11 +192,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final success = await ref.read(heartEconomyProvider.notifier).rewardAdWatched();
                   if (!mounted) return;
                   if (success) {
-                    DuoAudioService.playStarChime();
+                    PrashnixAudioService.playStarChime();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('+2 Hearts Claimed!', style: TextStyle(fontWeight: FontWeight.bold)),
-                        backgroundColor: DuoColors.green,
+                        backgroundColor: PrashnixColors.green,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -212,12 +212,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.ondemand_video_rounded, color: DuoColors.green),
+                    Icon(Icons.ondemand_video_rounded, color: PrashnixColors.green),
                     SizedBox(width: 8),
                     Text(
                       'WATCH AD (+2 ❤️)',
                       style: TextStyle(
-                        fontFamily: DuoTextStyles.dinNext,
+                        fontFamily: PrashnixTextStyles.dinNext,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.8,
                       ),
@@ -233,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showChestRewardModal() {
-    DuoAudioService.playGemsReward();
+    PrashnixAudioService.playGemsReward();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
@@ -249,10 +249,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               'Milestone Chest Unlocked!',
               style: TextStyle(
-                fontFamily: DuoTextStyles.duolingoSans,
+                fontFamily: PrashnixTextStyles.prashnixSans,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
-                color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -260,15 +260,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               'Outstanding work mastering this section! You claimed +25 XP bonus!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: DuoTextStyles.duolingoSans,
-                color: isDark ? AppColors.textMutedDark : DuoColors.textSecondary,
+                fontFamily: PrashnixTextStyles.prashnixSans,
+                color: isDark ? AppColors.textMutedDark : PrashnixColors.textSecondary,
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: DuoColors.yellow,
+                backgroundColor: PrashnixColors.yellow,
                 foregroundColor: Colors.black87,
                 minimumSize: const Size.fromHeight(48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -280,7 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: const Text(
                 'CLAIM REWARD',
                 style: TextStyle(
-                  fontFamily: DuoTextStyles.dinNext,
+                  fontFamily: PrashnixTextStyles.dinNext,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.8,
                 ),
@@ -293,7 +293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onActiveNodeTap(SkillNode node) {
-    DuoAudioService.playStarChime();
+    PrashnixAudioService.playStarChime();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     showModalBottomSheet(
@@ -316,7 +316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: DuoColors.green,
+                      color: PrashnixColors.green,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 34),
@@ -329,8 +329,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Text(
                           'READY FOR LESSON?',
                           style: TextStyle(
-                            fontFamily: DuoTextStyles.dinNext,
-                            color: DuoColors.greenShadow,
+                            fontFamily: PrashnixTextStyles.dinNext,
+                            color: PrashnixColors.greenShadow,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             fontSize: 12,
@@ -340,10 +340,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Text(
                           node.title,
                           style: TextStyle(
-                            fontFamily: DuoTextStyles.duolingoSans,
+                            fontFamily: PrashnixTextStyles.prashnixSans,
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                            color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
                           ),
                         ),
                       ],
@@ -351,7 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(ctx).pop(),
-                    icon: Icon(Icons.close, color: isDark ? AppColors.textMutedDark : DuoColors.textSecondary),
+                    icon: Icon(Icons.close, color: isDark ? AppColors.textMutedDark : PrashnixColors.textSecondary),
                   ),
                 ],
               ),
@@ -359,15 +359,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 'Complete questions to extend your streak shield and claim +25 XP!',
                 style: TextStyle(
-                  fontFamily: DuoTextStyles.duolingoSans,
-                  color: isDark ? AppColors.textMutedDark : DuoColors.textSecondary,
+                  fontFamily: PrashnixTextStyles.prashnixSans,
+                  color: isDark ? AppColors.textMutedDark : PrashnixColors.textSecondary,
                   fontSize: 14,
                 ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DuoColors.green,
+                  backgroundColor: PrashnixColors.green,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -395,7 +395,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       "LET'S GO",
                       style: TextStyle(
-                        fontFamily: DuoTextStyles.dinNext,
+                        fontFamily: PrashnixTextStyles.dinNext,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                         fontSize: 16,
@@ -414,11 +414,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onCompletedNodeTap(SkillNode node) {
-    DuoAudioService.playNodeComplete();
+    PrashnixAudioService.playNodeComplete();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: DuoColors.yellowShadow,
+        backgroundColor: PrashnixColors.yellowShadow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Text(
           'Completed: ${node.title} (Cleared!)',
@@ -430,11 +430,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onLockedNodeTap(SkillNode node) {
     HapticFeedback.heavyImpact();
-    DuoAudioService.playTap();
+    PrashnixAudioService.playTap();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: DuoColors.textPrimary,
+        backgroundColor: PrashnixColors.textPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Text(
           'Complete previous lessons to unlock "${node.title}".',
@@ -466,7 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: DuoStatsBar(
+      appBar: PrashnixStatsBar(
         streakDays: userState.streakCount,
         gems: userState.totalXp,
         hearts: userState.heartCount,
@@ -474,11 +474,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onFlagTap: _showDistrictSelector,
         onHeartsTap: () => _showHeartsModal(userState.heartCount),
         onGemsTap: () {
-          DuoAudioService.playGemsReward();
+          PrashnixAudioService.playGemsReward();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               behavior: SnackBarBehavior.floating,
-              backgroundColor: DuoColors.blue,
+              backgroundColor: PrashnixColors.blue,
               content: Text(
                 'Total XP: ${userState.totalXp} XP! Keep earning XP to climb the ranks.',
                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -487,11 +487,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
         onStreakTap: () {
-          DuoAudioService.playStreakFlame();
+          PrashnixAudioService.playStreakFlame();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               behavior: SnackBarBehavior.floating,
-              backgroundColor: DuoColors.orange,
+              backgroundColor: PrashnixColors.orange,
               content: Text(
                 '🔥 ${userState.streakCount} Day Streak! Practice daily to protect your flame.',
                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -502,12 +502,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: DuoColors.green,
+        color: PrashnixColors.green,
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         displacement: 40,
         child: unitsAsync.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(color: DuoColors.green),
+            child: CircularProgressIndicator(color: PrashnixColors.green),
           ),
           error: (err, stack) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(
@@ -520,19 +520,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline_rounded, color: DuoColors.red, size: 52),
+                  const Icon(Icons.error_outline_rounded, color: PrashnixColors.red, size: 52),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading curriculum: $err',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                      color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DuoColors.green,
+                      backgroundColor: PrashnixColors.green,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
@@ -559,25 +559,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Icon(
                         Icons.school_outlined,
                         size: 64,
-                        color: isDark ? AppColors.textSecondaryDark : DuoColors.textSecondary,
+                        color: isDark ? AppColors.textSecondaryDark : PrashnixColors.textSecondary,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'No curriculum units available.',
                         style: TextStyle(
-                          fontFamily: DuoTextStyles.duolingoSans,
+                          fontFamily: PrashnixTextStyles.prashnixSans,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.textPrimaryDark : DuoColors.textPrimary,
+                          color: isDark ? AppColors.textPrimaryDark : PrashnixColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Pull down to reload curriculum.',
                         style: TextStyle(
-                          fontFamily: DuoTextStyles.duolingoSans,
+                          fontFamily: PrashnixTextStyles.prashnixSans,
                           fontSize: 14,
-                          color: isDark ? AppColors.textSecondaryDark : DuoColors.textSecondary,
+                          color: isDark ? AppColors.textSecondaryDark : PrashnixColors.textSecondary,
                         ),
                       ),
                     ],
@@ -594,7 +594,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   for (int u = 0; u < units.length; u++) ...[
                     // 1. Dynamic Beveled Unit Header Card matching Admin Dashboard Theme Color
-                    DuoUnitHeader(
+                    PrashnixUnitHeader(
                       unitNumber: units[u].unitNumber,
                       title: units[u].title,
                       description: 'Master your skills, level up, and prepare for exams.',
@@ -634,7 +634,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Color _parseHexColor(String? hexString, [Color fallback = DuoColors.green]) {
+  Color _parseHexColor(String? hexString, [Color fallback = PrashnixColors.green]) {
     if (hexString == null || hexString.isEmpty) return fallback;
     try {
       String cleanHex = hexString.replaceAll('#', '').trim();
@@ -728,7 +728,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Offset endPoint = Offset(cxB - ux * radiusB, cyB - uy * radiusB);
 
     return Positioned.fill(
-      child: DuoSteppingDots(
+      child: PrashnixSteppingDots(
         count: 3,
         startOffset: startPoint,
         endOffset: endPoint,
@@ -749,18 +749,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final double cx = centerX + offset;
     final double cy = topPadding + (index * nodeSpacing);
 
-    DuoNodeType nodeType;
+    PrashnixNodeType nodeType;
     if (node.status == NodeStatus.completed) {
       nodeType = node.type == NodeType.milestone
-          ? DuoNodeType.completedChest
-          : DuoNodeType.completedCheck;
+          ? PrashnixNodeType.completedChest
+          : PrashnixNodeType.completedCheck;
     } else if (node.status == NodeStatus.active) {
-      nodeType = DuoNodeType.activeStar;
+      nodeType = PrashnixNodeType.activeStar;
     } else {
-      nodeType = DuoNodeType.locked;
+      nodeType = PrashnixNodeType.locked;
     }
 
-    if (nodeType == DuoNodeType.activeStar) {
+    if (nodeType == PrashnixNodeType.activeStar) {
       return Positioned(
         top: cy - 88, // Centers the 88px ring at cy, placing tooltip cleanly above
         left: cx - 100,
@@ -768,16 +768,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DuoFloatingTooltip(
+            PrashnixFloatingTooltip(
               text: 'START +25 XP',
               textColor: unitColor,
             ),
             const SizedBox(height: 6),
-            DuoPulsingRing(
+            PrashnixPulsingRing(
               size: 88,
               pulseColor: unitColor,
-              child: DuoPathNode(
-                type: DuoNodeType.activeStar,
+              child: PrashnixPathNode(
+                type: PrashnixNodeType.activeStar,
                 size: 84,
                 activeColor: unitColor,
                 onTap: () => _onActiveNodeTap(node),
@@ -791,12 +791,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Positioned(
       top: cy - 40,
       left: cx - 40,
-      child: DuoPathNode(
+      child: PrashnixPathNode(
         type: nodeType,
         size: 80,
         activeColor: unitColor,
         onTap: () {
-          if (nodeType == DuoNodeType.completedChest) {
+          if (nodeType == PrashnixNodeType.completedChest) {
             _showChestRewardModal();
           } else if (node.status == NodeStatus.completed) {
             _onCompletedNodeTap(node);

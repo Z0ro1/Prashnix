@@ -10,7 +10,7 @@
 ## 1. Executive Summary & Product Vision
 
 ### 1.1. Product Vision
-**Streak** is designed to be the ultimate gamified habit-building and learning application. Drawing heavy inspiration from highly engaging platforms like Duolingo, the app leverages proven psychological hooks—such as visual progression via a Skill Tree, daily streak counters, and a punishing-yet-rewarding "Hearts" (lives) system—to drive massive user retention and daily active usage. 
+**Prashnix** is designed to be the ultimate gamified habit-building and learning application. Drawing inspiration from top-tier gamified platforms, the app leverages proven psychological hooks—such as visual progression via a Skill Tree, daily streak counters, and a punishing-yet-rewarding "Hearts" (lives) system—to drive massive user retention and daily active usage. 
 
 ### 1.2. Tech Stack Overview
 *   **Mobile Client:** Flutter (iOS & Android)
@@ -77,7 +77,7 @@
     *   *Completed:* Golden/Colored, displaying a crown or star count.
     *   *Legendary:* A shattered, glowing state indicating the user has mastered this node.
 
-#### B. Animations & "Juiciness" (`flutter_animate` & `duolingo_button.dart`)
+#### B. Animations & "Juiciness" (`flutter_animate` & `prashnix_button.dart`)
 *   Buttons must have a physical, 3D feel. Pressing a node compresses it downwards (Y-axis translation) and changes its shadow to simulate depth.
 *   Completing a node triggers an explosion of confetti or stars using a particle emitter.
 

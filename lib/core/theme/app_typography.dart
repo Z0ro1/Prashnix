@@ -3,26 +3,26 @@ import 'package:flutter/material.dart';
 class AppTypography {
   AppTypography._();
 
-  // Official Duolingo Font Families extracted from APK
-  static const String duolingoSans = 'DuolingoSans';
+  // Official Prashnix Font Families
+  static const String prashnixSans = 'PrashnixSans';
   static const String dinNext = 'DINNext';
 
   static TextStyle get displayHero => const TextStyle(
-        fontFamily: duolingoSans,
+        fontFamily: prashnixSans,
         fontSize: 40,
         height: 48 / 40,
         fontWeight: FontWeight.w900,
       );
 
   static TextStyle get headlineLarge => const TextStyle(
-        fontFamily: duolingoSans,
+        fontFamily: prashnixSans,
         fontSize: 28,
         height: 36 / 28,
         fontWeight: FontWeight.w900,
       );
 
   static TextStyle get headlineMedium => const TextStyle(
-        fontFamily: duolingoSans,
+        fontFamily: prashnixSans,
         fontSize: 22,
         height: 28 / 22,
         fontWeight: FontWeight.w800,

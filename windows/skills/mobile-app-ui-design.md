@@ -1,6 +1,6 @@
 Mobile App UI/UX Design Skill
 
-This skill guides the creation of professional, polished mobile app interfaces that follow proven design principles used by top-tier apps like Airbnb, Duolingo, Spotify, Revolut, and Phantom.
+This skill guides the creation of professional, polished mobile app interfaces that follow proven design principles used by top-tier apps like Airbnb, Prashnix, Spotify, Revolut, and Phantom.
 
 Core Philosophy
 

@@ -103,18 +103,18 @@ flutter:
     - .env
 
   fonts:
-    - family: DuolingoSans
+    - family: PrashnixSans
       fonts:
-        - asset: assets/fonts/duolingosans_regular.otf
-        - asset: assets/fonts/duolingosans_medium.otf
+        - asset: assets/fonts/prashnixsans_regular.otf
+        - asset: assets/fonts/prashnixsans_medium.otf
           weight: 500
-        - asset: assets/fonts/duolingosans_bold.otf
+        - asset: assets/fonts/prashnixsans_bold.otf
           weight: 700
 
     - family: DINNext
       fonts:
-        - asset: assets/fonts/din_next_for_duolingo.otf
-        - asset: assets/fonts/din_next_for_duolingo_medium.otf
+        - asset: assets/fonts/din_next_for_prashnix.otf
+        - asset: assets/fonts/din_next_for_prashnix_medium.otf
           weight: 500
-        - asset: assets/fonts/din_next_for_duolingo_bold.otf
+        - asset: assets/fonts/din_next_for_prashnix_bold.otf
           weight: 700
