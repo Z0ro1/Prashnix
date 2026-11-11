@@ -34,4 +34,19 @@ class ProgressRepository {
     }
     return null;
   }
+
+  /// Batch load all progress keys in a single instant query to avoid N+1 query lag.
+  Future<Map<String, String>> getAllLocalStates() async {
+    final db = await _dbService.database;
+    final List<Map<String, dynamic>> maps = await db.query(DbConstants.tableProgress);
+    final result = <String, String>{};
+    for (final row in maps) {
+      final k = row['key'] as String?;
+      final v = row['value'] as String?;
+      if (k != null && v != null) {
+        result[k] = v;
+      }
+    }
+    return result;
+  }
 }

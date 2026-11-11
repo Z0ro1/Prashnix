@@ -25,7 +25,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: const Duration(milliseconds: 650),
     )..forward();
 
     _startInitializationFlow();
@@ -38,14 +38,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _startInitializationFlow() async {
-    // Dynamic status text updates
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 300));
     if (mounted) setState(() => _statusText = 'अभ्यासक्रम लोड होत आहे...');
 
-    await Future.delayed(const Duration(milliseconds: 1000));
-    if (mounted) setState(() => _statusText = 'सज्ज व्हा! खाकीचं स्वप्न...');
-
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
 
     _navigateNext();

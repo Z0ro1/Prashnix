@@ -57,6 +57,7 @@ dependencies:
   chiclet: ^1.2.1
   audioplayers: ^6.8.1
   lottie: ^3.6.1
+  app_links: ^7.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

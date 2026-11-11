@@ -2,7 +2,7 @@ class DbConstants {
   DbConstants._();
 
   static const String databaseName = 'spardha_questions.db';
-  static const int databaseVersion = 5;
+  static const int databaseVersion = 7;
 
   // Table Names
   static const String tableQuestions = 'questions';
@@ -15,6 +15,7 @@ class DbConstants {
   static const String createQuestionsTable = '''
     CREATE TABLE IF NOT EXISTS $tableQuestions (
       id TEXT PRIMARY KEY,
+      display_id TEXT,
       subject_tag TEXT NOT NULL,
       subtopic_tag TEXT,
       question_text TEXT NOT NULL,
@@ -61,7 +62,7 @@ class DbConstants {
 
   static const String createSavedQuestionsTable = '''
     CREATE TABLE IF NOT EXISTS $tableSavedQuestions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT PRIMARY KEY,
       question_id TEXT NOT NULL UNIQUE,
       saved_at TEXT NOT NULL
     )

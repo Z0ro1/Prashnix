@@ -8,6 +8,9 @@ import '../../data/repositories/question_repository.dart';
 import '../../../../core/state/user_state.dart';
 import '../../../skill_tree/presentation/providers/skill_tree_provider.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../data/repositories/weekly_test_repository.dart';
+import '../../../gamification/presentation/providers/heart_economy_provider.dart';
+import '../../../gamification/presentation/providers/streak_provider.dart';
 
 part 'quiz_provider.g.dart';
 
@@ -23,6 +26,9 @@ class QuizState {
   final int streakIncrement;
   final bool isLoading;
   final String? nodeId;
+  final int initialQuestionCount;
+  final int mistakesCount;
+  final Set<String> awardedQuestionKeys;
 
   QuizState({
     this.questions = const [],
@@ -34,6 +40,9 @@ class QuizState {
     this.streakIncrement = 0,
     this.isLoading = false,
     this.nodeId,
+    this.initialQuestionCount = 0,
+    this.mistakesCount = 0,
+    this.awardedQuestionKeys = const {},
   });
 
   QuestionModel? get currentQuestion {
@@ -52,6 +61,9 @@ class QuizState {
     int? streakIncrement,
     bool? isLoading,
     String? nodeId,
+    int? initialQuestionCount,
+    int? mistakesCount,
+    Set<String>? awardedQuestionKeys,
   }) {
     return QuizState(
       questions: questions ?? this.questions,
@@ -63,29 +75,64 @@ class QuizState {
       streakIncrement: streakIncrement ?? this.streakIncrement,
       isLoading: isLoading ?? this.isLoading,
       nodeId: nodeId ?? this.nodeId,
+      initialQuestionCount: initialQuestionCount ?? this.initialQuestionCount,
+      mistakesCount: mistakesCount ?? this.mistakesCount,
+      awardedQuestionKeys: awardedQuestionKeys ?? this.awardedQuestionKeys,
     );
   }
 }
 
 @Riverpod(keepAlive: true)
 class QuizNotifier extends _$QuizNotifier {
+  bool _isCompleting = false;
+
   @override
   QuizState build() {
+    _isCompleting = false;
     return QuizState(questions: [], isLoading: true);
   }
 
-  Future<void> loadQuestionsForNode(String nodeId) async {
+  void setQuestionsDirectly(List<QuestionModel> questions, {String nodeId = 'weekly_test'}) {
+    _isCompleting = false;
+    state = state.copyWith(
+      questions: questions,
+      isLoading: false,
+      nodeId: nodeId,
+      currentIndex: 0,
+      clearSelectedOption: true,
+      status: QuizStatus.unanswered,
+      correctAnswers: 0,
+      baseXpEarned: 0,
+      streakIncrement: 0,
+      initialQuestionCount: questions.length,
+      mistakesCount: 0,
+      awardedQuestionKeys: const {},
+    );
+  }
+
+  Future<void> loadQuestionsForNode(String nodeId, {int lessonIndex = 0}) async {
+    _isCompleting = false;
     state = state.copyWith(isLoading: true, nodeId: nodeId);
     try {
       final repo = QuestionRepository();
       List<QuestionModel> newQuestions = [];
-      if (nodeId == 'weekly_test') {
-        final ProgressRepository progressRepo = ProgressRepository();
-        final currentLevelStr = await progressRepo.getLocalState('highest_unlocked_level') ?? '0';
-        int currentLevel = int.tryParse(currentLevelStr) ?? 0;
-        newQuestions = await repo.getWeeklyTestQuestions(100, currentLevel);
+      if (nodeId.startsWith('weekly_test')) {
+        String? examType;
+        if (nodeId.startsWith('weekly_test_')) {
+          examType = nodeId.replaceFirst('weekly_test_', '');
+        }
+        final weeklyRepo = WeeklyTestRepository(questionRepo: repo);
+        final weeklyTest = await weeklyRepo.getActiveWeeklyTest(examType: examType);
+        if (weeklyTest != null && weeklyTest.questions.isNotEmpty) {
+          newQuestions = weeklyTest.questions;
+        } else {
+          final ProgressRepository progressRepo = ProgressRepository();
+          final currentLevelStr = await progressRepo.getLocalState('highest_unlocked_level') ?? '0';
+          int currentLevel = int.tryParse(currentLevelStr) ?? 0;
+          newQuestions = await repo.getWeeklyTestQuestions(100, currentLevel);
+        }
       } else {
-        newQuestions = await repo.getQuestionsByNode(nodeId);
+        newQuestions = await repo.getQuestionsByNode(nodeId, lessonIndex: lessonIndex);
       }
       
       state = state.copyWith(
@@ -97,9 +144,11 @@ class QuizNotifier extends _$QuizNotifier {
         correctAnswers: 0,
         baseXpEarned: 0,
         streakIncrement: 0,
+        initialQuestionCount: newQuestions.length,
+        mistakesCount: 0,
+        awardedQuestionKeys: const {},
       );
     } catch (e) {
-      print('Error loading questions: $e');
       state = state.copyWith(
         questions: [],
         isLoading: false,
@@ -109,12 +158,14 @@ class QuizNotifier extends _$QuizNotifier {
         correctAnswers: 0,
         baseXpEarned: 0,
         streakIncrement: 0,
+        initialQuestionCount: 0,
+        mistakesCount: 0,
+        awardedQuestionKeys: const {},
       );
     }
   }
 
   void selectOption(String optionIndex) {
-    // optionIndex like 'A', 'B', 'C', 'D'
     if (state.status == QuizStatus.unanswered || state.status == QuizStatus.selected) {
       if (ref.read(settingsProvider).hapticsEnabled) {
         HapticFeedback.selectionClick();
@@ -138,39 +189,46 @@ class QuizNotifier extends _$QuizNotifier {
       if (ref.read(settingsProvider).hapticsEnabled) {
         HapticFeedback.mediumImpact();
       }
+
+      // Security check: Only award +2 XP once per unique question to prevent retry farming
+      final questionKey = question.id ?? 'q_${state.currentIndex}';
+      final maxAllowedQuestionXp = state.initialQuestionCount > 0 ? state.initialQuestionCount * 2 : 20;
+      final isNewQuestion = !state.awardedQuestionKeys.contains(questionKey);
+      final canAwardXp = isNewQuestion && (state.baseXpEarned + 2 <= maxAllowedQuestionXp);
+
+      final updatedAwardedKeys = Set<String>.from(state.awardedQuestionKeys)..add(questionKey);
+      final updatedXp = canAwardXp ? state.baseXpEarned + 2 : state.baseXpEarned;
+
       state = state.copyWith(
         status: QuizStatus.checkedCorrect,
         correctAnswers: state.correctAnswers + 1,
-        baseXpEarned: state.baseXpEarned + 10, // 10 XP per correct answer
+        baseXpEarned: updatedXp,
+        awardedQuestionKeys: updatedAwardedKeys,
       );
     } else {
       if (ref.read(settingsProvider).hapticsEnabled) {
-        HapticFeedback.vibrate(); // Long buzz for incorrect answer
+        HapticFeedback.vibrate();
       }
-      state = state.copyWith(
-        status: QuizStatus.checkedIncorrect,
-      );
-      
+
       // Log mistake to MistakeRepository
       if (question.id != null) {
         final MistakeRepository mistakeRepo = MistakeRepository();
         mistakeRepo.logMistake(question.id!, state.selectedOption!);
       }
 
-      // Deduct heart
-      ref.read(userStoreProvider.notifier).useHeart();
-      
       // Endless Retry: Re-append the failed question to the end of the queue
       final updatedQuestions = List<QuestionModel>.from(state.questions)..add(question);
-      state = state.copyWith(questions: updatedQuestions);
+      state = state.copyWith(
+        status: QuizStatus.checkedIncorrect,
+        questions: updatedQuestions,
+        mistakesCount: state.mistakesCount + 1,
+      );
     }
   }
 
   void nextQuestion() {
-    if (ref.read(userStoreProvider).heartCount <= 0) {
-      state = state.copyWith(status: QuizStatus.outOfHearts);
-      return;
-    }
+    // Double-tap race condition guard
+    if (state.status == QuizStatus.finished || _isCompleting) return;
 
     if (state.currentIndex < state.questions.length - 1) {
       state = state.copyWith(
@@ -179,21 +237,36 @@ class QuizNotifier extends _$QuizNotifier {
         status: QuizStatus.unanswered,
       );
     } else {
-      // Quiz finished
-      if (state.correctAnswers == state.questions.length) { // Dynamic perfect score base
-        // Perfect bonus
+      _isCompleting = true;
+      final isWeeklyTest = state.nodeId?.startsWith('weekly_test') ?? false;
+
+      int completionBonus = 0;
+      if (isWeeklyTest) {
+        // 100-Question Championship Test completion reward (+1000 XP & Heart Refill)
+        completionBonus = 1000;
+        ref.read(heartEconomyProvider.notifier).refillFull();
+      } else if (state.mistakesCount == 0) {
+        // Perfect Lesson bonus (0 mistakes on first try): +100 XP
         if (ref.read(settingsProvider).hapticsEnabled) {
           HapticFeedback.heavyImpact();
         }
-        state = state.copyWith(baseXpEarned: state.baseXpEarned + 50);
+        completionBonus = 100;
       } else {
+        // Standard completion reward with retries: +30 XP
         if (ref.read(settingsProvider).hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
+        completionBonus = 30;
       }
+
+      final totalXpForLesson = state.baseXpEarned + completionBonus;
+      state = state.copyWith(baseXpEarned: totalXpForLesson);
       
-      // Update User Store XP
-      ref.read(userStoreProvider.notifier).addXp(state.baseXpEarned);
+      // Update User Store XP exactly once
+      ref.read(userStoreProvider.notifier).addXp(totalXpForLesson);
+      
+      // Update streak and record daily activity
+      ref.read(streakProvider.notifier).recordDailyActivity(xpEarned: totalXpForLesson);
       
       // Tell SkillTreeNotifier to progress the fractional lesson
       if (state.nodeId != null) {
@@ -205,7 +278,7 @@ class QuizNotifier extends _$QuizNotifier {
 
       state = state.copyWith(
         status: QuizStatus.finished,
-        streakIncrement: 1, // Increase streak by 1 for completing a lesson
+        streakIncrement: 1,
       );
     }
   }

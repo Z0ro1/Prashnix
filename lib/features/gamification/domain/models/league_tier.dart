@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// League tiers progression ladder based on Total XP.
-/// Bronze (0-499), Silver (500-1499), Gold (1500-2999),
-/// Platinum (3000-4999), Diamond (5000-9999), Champion (10000+).
+/// Bronze (0-799), Silver (800-2499), Gold (2500-5999),
+/// Platinum (6000-12499), Diamond (12500-24999), Champion (25000+).
 class LeagueTier {
   final String name;
   final int minXp;
@@ -28,7 +28,7 @@ class LeagueTier {
     LeagueTier(
       name: 'Bronze League',
       minXp: 0,
-      maxXp: 499,
+      maxXp: 799,
       primaryColor: Color(0xFFCD7F32),
       secondaryColor: Color(0xFF8D5524),
       icon: Icons.shield_rounded,
@@ -37,52 +37,52 @@ class LeagueTier {
     ),
     LeagueTier(
       name: 'Silver League',
-      minXp: 500,
-      maxXp: 1499,
+      minXp: 800,
+      maxXp: 2499,
       primaryColor: Color(0xFFCBD5E1),
       secondaryColor: Color(0xFF64748B),
       icon: Icons.shield_rounded,
-      description: 'Rising through the contender ranks!',
+      description: 'Consistent learner building daily momentum!',
       tierLevel: 2,
     ),
     LeagueTier(
       name: 'Gold League',
-      minXp: 1500,
-      maxXp: 2999,
+      minXp: 2500,
+      maxXp: 5999,
       primaryColor: Color(0xFFFFB800),
       secondaryColor: Color(0xFFD97706),
       icon: Icons.workspace_premium_rounded,
-      description: 'Elite contenders battling for glory!',
+      description: 'Dedicated contender climbing district ranks!',
       tierLevel: 3,
     ),
     LeagueTier(
       name: 'Platinum League',
-      minXp: 3000,
-      maxXp: 4999,
+      minXp: 6000,
+      maxXp: 12499,
       primaryColor: Color(0xFF06B6D4),
       secondaryColor: Color(0xFF0891B2),
       icon: Icons.military_tech_rounded,
-      description: 'Master learners proving excellence!',
+      description: 'Elite competitive aspirant mastering syllabus!',
       tierLevel: 4,
     ),
     LeagueTier(
       name: 'Diamond League',
-      minXp: 5000,
-      maxXp: 9999,
+      minXp: 12500,
+      maxXp: 24999,
       primaryColor: Color(0xFFA855F7),
       secondaryColor: Color(0xFF7E22CE),
       icon: Icons.diamond_rounded,
-      description: 'Apex champions of the leaderboard!',
+      description: 'Top-tier master of Maharashtra exam tracks!',
       tierLevel: 5,
     ),
     LeagueTier(
       name: 'Champion League',
-      minXp: 10000,
+      minXp: 25000,
       maxXp: null,
       primaryColor: Color(0xFFFF3366),
       secondaryColor: Color(0xFFDC2626),
       icon: Icons.local_fire_department_rounded,
-      description: 'Legendary Hall of Fame status!',
+      description: 'Legendary Hall of Fame topper!',
       tierLevel: 6,
     ),
   ];

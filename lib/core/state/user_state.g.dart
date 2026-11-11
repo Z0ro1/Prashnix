@@ -19,7 +19,7 @@ final class UserStoreProvider extends $NotifierProvider<UserStore, UserModel> {
         argument: null,
         retry: null,
         name: r'userStoreProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,7 +40,7 @@ final class UserStoreProvider extends $NotifierProvider<UserStore, UserModel> {
   }
 }
 
-String _$userStoreHash() => r'b187125cbe5820862831a4ef329bbf6065b0a09b';
+String _$userStoreHash() => r'a307d1dd7c72f90c5777268a33aa24ef192bdce9';
 
 abstract class _$UserStore extends $Notifier<UserModel> {
   UserModel build();

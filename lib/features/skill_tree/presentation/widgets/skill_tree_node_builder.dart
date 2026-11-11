@@ -4,7 +4,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../providers/skill_tree_provider.dart';
 import 'dart:math' as math;
-import 'package:flutter_animate/flutter_animate.dart';
 
 class SkillTreeNodeBuilder extends StatefulWidget {
   final SkillNode node;
@@ -215,9 +214,6 @@ class Custom3DNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glowColor = isActive
-        ? baseColor.withValues(alpha: 0.5)
-        : Colors.transparent;
     final backgroundColor = baseColor;
     final buttonColor = _darken(baseColor, 0.25);
 

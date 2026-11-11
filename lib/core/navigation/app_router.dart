@@ -24,6 +24,7 @@ import '../../features/gamification/presentation/screens/heart_details_screen.da
 import '../config/supabase_config.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/profile/data/repositories/progress_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -62,11 +63,22 @@ class RouterNotifier extends ChangeNotifier {
     if (_isOnboardedCache != null) return _isOnboardedCache!;
 
     try {
+      // 1. Instant local SQLite resolution (0ms, offline-first)
+      final localOnboarded = await ProgressRepository().getLocalState('is_onboarded');
+      if (localOnboarded == '1') {
+        _isOnboardedCache = true;
+        return true;
+      }
+
+      // 2. Fallback to Supabase if local state not yet established
       final repo = AuthRepository();
       final profile = await repo.fetchUserProfile(userId);
       _isOnboardedCache = (profile != null && 
                            profile['username'] != null && 
                            profile['username'].toString().trim().isNotEmpty);
+      if (_isOnboardedCache == true) {
+        await ProgressRepository().saveLocalState('is_onboarded', '1');
+      }
       return _isOnboardedCache!;
     } catch (e) {
       debugPrint('Error in checkIsOnboarded: $e');

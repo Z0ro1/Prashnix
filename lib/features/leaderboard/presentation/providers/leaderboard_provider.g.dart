@@ -42,7 +42,7 @@ final class LeaderboardNotifierProvider
 }
 
 String _$leaderboardNotifierHash() =>
-    r'73e8a35eef1947ef3797e3a6f1dd9167fbf64e16';
+    r'd16ef1dc9549e5cdb22f003ff49a3c25e42aa801';
 
 abstract class _$LeaderboardNotifier extends $Notifier<LeaderboardState> {
   LeaderboardState build();

@@ -5,6 +5,7 @@ import '../../../../core/models/question_model.dart';
 import '../../../gamification/presentation/providers/heart_economy_provider.dart';
 import '../../../quiz/data/repositories/mistake_repository.dart';
 import 'mistake_provider.dart';
+import '../../../../core/state/user_state.dart';
 
 part 'retry_sprint_provider.g.dart';
 
@@ -110,6 +111,8 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
   }
 
   void nextQuestion() {
+    if (state.status == RetryStatus.finished) return;
+
     if (state.currentIndex < state.questions.length - 1) {
       state = state.copyWith(
         currentIndex: state.currentIndex + 1,
@@ -118,8 +121,13 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
       );
     } else {
       // Finished
+      final earnedXp = state.clearedCount * 2;
+      if (earnedXp > 0) {
+        ref.read(userStoreProvider.notifier).addXp(earnedXp);
+      }
+
       // Refresh the mistake bank
-      ref.read(mistakeProvider.notifier).build(); // triggers refresh basically, or expose a refresh method.
+      ref.read(mistakeProvider.notifier).build();
       
       state = state.copyWith(status: RetryStatus.finished);
     }

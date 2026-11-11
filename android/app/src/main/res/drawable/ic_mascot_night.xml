@@ -1,0 +1,57 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- Body Shadow Base (Urgent Reddish Glow) -->
+    <path
+        android:fillColor="#EA2B2B"
+        android:pathData="M36,6C18,6 8,18 8,36C8,54 20,66 36,66C52,66 64,54 64,36C64,18 54,6 36,6Z"/>
+    <!-- Body Face (Intense Orange/Green Alert) -->
+    <path
+        android:fillColor="#58CC02"
+        android:pathData="M36,4C19,4 10,16 10,34C10,51 21,63 36,63C51,63 62,51 62,34C62,16 53,4 36,4Z"/>
+    <!-- Warning Flame on top of head -->
+    <path
+        android:fillColor="#FF9600"
+        android:pathData="M36,0C35,3 32,5 30,7C28,9 28,11 29,12C31,14 34,14 36,14C39,14 41,12 41,10C41,7 38,3 36,0Z"/>
+    <path
+        android:fillColor="#FF4B4B"
+        android:pathData="M36,3C35,5 33,6 32,8C33,9 35,10 36,10C38,10 39,9 39,7C39,5 37,4 36,3Z"/>
+    <!-- Panicked Angled Eyebrows -->
+    <path
+        android:fillColor="#3D8B02"
+        android:pathData="M23,24C27,27 32,29 35,30C34,31 32,32 29,31C26,30 23,28 22,25Z"/>
+    <path
+        android:fillColor="#3D8B02"
+        android:pathData="M49,24C45,27 40,29 37,30C38,31 40,32 43,31C46,30 49,28 50,25Z"/>
+    <!-- Giant Wide Eyes (Full panic) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,38C20,45 25,49 32,49C39,49 40,45 40,38C40,31 36,27 32,27C26,27 20,31 20,38Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,38C38,45 42,49 48,49C54,49 57,45 57,38C57,31 54,27 48,27C43,27 38,31 38,38Z"/>
+    <!-- Tiny Stressed Pupils -->
+    <path
+        android:fillColor="#EA2B2B"
+        android:pathData="M30,38C30,40 31,41 33,41C34,41 35,40 35,38C35,36 34,35 33,35C31,35 30,36 30,38Z"/>
+    <path
+        android:fillColor="#EA2B2B"
+        android:pathData="M44,38C44,40 45,41 47,41C48,41 49,40 49,38C49,36 48,35 47,35C45,35 44,36 44,38Z"/>
+    <!-- Sweat Drop (Falling from forehead) -->
+    <path
+        android:fillColor="#1CB0F6"
+        android:pathData="M56,22C54,25 53,27 53,29C53,31.2 54.8,33 57,33C59.2,33 61,31.2 61,29C61,27 58,25 56,22Z"/>
+    <!-- Open Screaming Beak / Mouth -->
+    <path
+        android:fillColor="#4B4B4B"
+        android:pathData="M31,48C31,44 41,44 41,48C41,55 31,55 31,48Z"/>
+    <path
+        android:fillColor="#FF4B4B"
+        android:pathData="M33,50C33,47 39,47 39,50C39,54 33,54 33,50Z"/>
+    <path
+        android:fillColor="#FF9600"
+        android:pathData="M30,44L42,44L36,47Z"/>
+</vector>
+

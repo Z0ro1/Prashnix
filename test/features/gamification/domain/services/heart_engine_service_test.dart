@@ -14,49 +14,86 @@ void main() {
     engine = HeartEngineService();
   });
 
-  group('HeartEngineService Calculations', () {
+  group('HeartEngineService 10y Senior QA Bulletproof Tests', () {
     test('calculateRegeneratedHearts: returns full hearts if midnight IST has passed', () {
       final istLocation = tz.getLocation('Asia/Kolkata');
-      
-      // Assume "now" is noon on a specific day in UTC
       final nowUtc = DateTime.now().toUtc();
       
       // Last regen was yesterday at 11:00 PM IST
       final yesterdayIst = tz.TZDateTime(istLocation, nowUtc.year, nowUtc.month, nowUtc.day - 1, 23, 0);
       final lastRegenUtc = yesterdayIst.toUtc();
 
-      final result = engine.calculateRegeneratedHearts(5, lastRegenUtc);
+      final result = engine.calculateRegeneratedHearts(1, lastRegenUtc);
 
       expect(result.updatedHearts, HeartEngineService.maxHearts);
       expect(result.secondsUntilNextRegen, 0);
     });
 
-    test('calculateRegeneratedHearts: returns current hearts if less than 60 mins elapsed on same day', () {
+    test('calculateRegeneratedHearts: returns current hearts if less than 120 mins elapsed on same day', () {
       final now = DateTime.utc(2026, 9, 9, 12, 0); // Noon UTC
-      final lastRegen = now.subtract(const Duration(minutes: 30));
+      final lastRegen = now.subtract(const Duration(minutes: 45));
 
       final result = engine.calculateRegeneratedHearts(3, lastRegen, nowTime: now);
 
       expect(result.updatedHearts, 3);
-      expect(result.secondsUntilNextRegen, (60 * 60) - (30 * 60)); // 30 mins remaining
+      // 120 - 45 = 75 minutes remaining
+      expect(result.secondsUntilNextRegen, (120 * 60) - (45 * 60));
     });
 
-    test('calculateRegeneratedHearts: calculates correct number of hearts added if multiple hours passed', () {
+    test('calculateRegeneratedHearts: adds 1 heart every 2 hours (120 mins) with rolling window', () {
       final now = DateTime.utc(2026, 9, 9, 12, 0); // Noon UTC
-      final lastRegen = now.subtract(const Duration(hours: 3, minutes: 15)); // 195 mins elapsed
+      // 4 hours and 15 mins elapsed = 255 mins -> 2 hearts added (4 hours), 15 mins towards 3rd heart
+      final lastRegen = now.subtract(const Duration(hours: 4, minutes: 15));
 
       final result = engine.calculateRegeneratedHearts(1, lastRegen, nowTime: now);
 
-      expect(result.updatedHearts, 4); // 1 + 3
-      // Next regen should be in 45 mins (since 15 mins have passed towards the next hour)
-      expect(result.secondsUntilNextRegen, (45 * 60)); 
+      expect(result.updatedHearts, 3); // 1 + 2 hearts
+      // 120 - 15 = 105 mins remaining until next heart
+      expect(result.secondsUntilNextRegen, 105 * 60);
     });
 
-    test('calculateRegeneratedHearts: caps at maxHearts', () {
+    test('calculateRegeneratedHearts: 10 hours elapsed fully restores 5 hearts', () {
+      final now = DateTime.utc(2026, 9, 9, 16, 0);
+      final lastRegen = now.subtract(const Duration(hours: 10)); // 600 mins
+
+      final result = engine.calculateRegeneratedHearts(0, lastRegen, nowTime: now);
+
+      expect(result.updatedHearts, HeartEngineService.maxHearts);
+      expect(result.secondsUntilNextRegen, 0);
+    });
+
+    test('calculateRegeneratedHearts: caps at maxHearts (5) and returns 0 remaining seconds', () {
       final now = DateTime.now().toUtc();
       final lastRegen = now.subtract(const Duration(hours: 100)); // many days
 
       final result = engine.calculateRegeneratedHearts(20, lastRegen);
+
+      expect(result.updatedHearts, HeartEngineService.maxHearts);
+      expect(result.secondsUntilNextRegen, 0);
+    });
+
+    test('calculateRegeneratedHearts: anti-cheat rollback protection when clock is turned backwards', () {
+      final now = DateTime.utc(2026, 9, 9, 12, 0);
+      // Clock anomaly: lastRegen is in the future
+      final futureLastRegen = now.add(const Duration(hours: 2));
+
+      final result = engine.calculateRegeneratedHearts(2, futureLastRegen, nowTime: now);
+
+      expect(result.updatedHearts, 2);
+      expect(result.secondsUntilNextRegen, 120 * 60);
+    });
+
+    test('calculateRegeneratedHearts: resets to full hearts when crossing 00:00 IST even on same UTC day', () {
+      // 2026-10-29 18:25:00 UTC = 2026-10-29 23:55:00 IST (Day 1)
+      final day1BeforeMidnightUtc = DateTime.utc(2026, 10, 29, 18, 25);
+      // 2026-10-29 18:35:00 UTC = 2026-10-30 00:05:00 IST (Day 2 in IST, but still Day 1 in UTC!)
+      final day2AfterMidnightUtc = DateTime.utc(2026, 10, 29, 18, 35);
+
+      final result = engine.calculateRegeneratedHearts(
+        1,
+        day1BeforeMidnightUtc,
+        nowTime: day2AfterMidnightUtc,
+      );
 
       expect(result.updatedHearts, HeartEngineService.maxHearts);
       expect(result.secondsUntilNextRegen, 0);
@@ -70,9 +107,11 @@ void main() {
       expect(engine.calculateStreakBonus(11), 0);
     });
 
-    test('canLaunchLesson: returns true only if hearts >= 1', () {
+    test('canLaunchLesson: returns true only if hearts >= 2', () {
       expect(engine.canLaunchLesson(0), isFalse);
-      expect(engine.canLaunchLesson(1), isTrue);
+      expect(engine.canLaunchLesson(1), isFalse);
+      expect(engine.canLaunchLesson(2), isTrue);
+      expect(engine.canLaunchLesson(3), isTrue);
       expect(engine.canLaunchLesson(5), isTrue);
     });
   });

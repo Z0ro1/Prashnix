@@ -6,6 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/progress_ring.dart';
+import '../../../../core/services/ad_service.dart';
+import '../../../profile/presentation/screens/mistake_review_screen.dart';
 import '../providers/quiz_provider.dart';
 
 class QuizSummaryScreen extends ConsumerWidget {
@@ -110,7 +112,11 @@ class QuizSummaryScreen extends ConsumerWidget {
                   text: 'Review Mistakes',
                   variant: ButtonVariant.outline,
                   onPressed: () {
-                    // Navigate to Phase 8 Mistake Review
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const MistakeReviewScreen(),
+                      ),
+                    );
                   },
                 ).animate().fade(delay: 1000.ms),
                 const SizedBox(height: 16),
@@ -120,7 +126,13 @@ class QuizSummaryScreen extends ConsumerWidget {
                 text: 'Continue to Roadmap ➔',
                 variant: ButtonVariant.primaryMint,
                 onPressed: () {
-                  Navigator.of(context).pop(); // Should pop back to roadmap
+                  AdMobService().showInterstitialAd(
+                    onAdClosed: () {
+                      if (context.mounted) {
+                        Navigator.of(context).pop(); // Pop back to roadmap
+                      }
+                    },
+                  );
                 },
               ).animate().fade(delay: 1200.ms).slideY(begin: 0.2),
             ],

@@ -14,6 +14,7 @@ import '../widgets/feedback_drawer.dart';
 import '../widgets/interactive_option_pill.dart';
 import '../widgets/quiz_progress_bar.dart';
 import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/services/ad_service.dart';
 import '../../../profile/presentation/providers/saved_questions_provider.dart';
 import 'quiz_summary_screen.dart';
 
@@ -39,11 +40,16 @@ class QuizScreen extends ConsumerWidget {
       ),
     ).then((confirmed) {
       if (confirmed == true && parentContext.mounted) {
-        if (Navigator.of(parentContext).canPop()) {
-          Navigator.of(parentContext).pop();
-        } else {
-          parentContext.go('/home');
-        }
+        AdMobService().showInterstitialAd(
+          onAdClosed: () {
+            if (!parentContext.mounted) return;
+            if (Navigator.of(parentContext).canPop()) {
+              Navigator.of(parentContext).pop();
+            } else {
+              parentContext.go('/home');
+            }
+          },
+        );
       }
     });
   }
@@ -162,15 +168,44 @@ class QuizScreen extends ConsumerWidget {
                     children: [
                       if (question.id != null)
                         IconButton(
+                          tooltip: isSaved ? 'Remove bookmark' : 'Save question',
                           icon: Icon(
                             isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                            color: isSaved ? AppColors.waterBlue : mutedColor,
+                            color: isSaved ? AppColors.canaryYellow : mutedColor,
+                            size: 26,
                           ),
-                          onPressed: () {
-                            if (ref.read(settingsProvider).hapticsEnabled) {
-                              HapticFeedback.lightImpact();
+                          onPressed: () async {
+                            HapticFeedback.mediumImpact();
+                            final nowSaved = await ref.read(savedQuestionsProvider.notifier).toggleSaveStatus(question.id!);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                  backgroundColor: nowSaved ? const Color(0xFF1F2937) : const Color(0xFF374151),
+                                  duration: const Duration(seconds: 2),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  content: Row(
+                                    children: [
+                                      Icon(
+                                        nowSaved ? Icons.bookmark_added_rounded : Icons.bookmark_remove_rounded,
+                                        color: nowSaved ? AppColors.canaryYellow : Colors.white70,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        nowSaved ? 'Question saved to bookmarks!' : 'Question removed from bookmarks',
+                                        style: AppTypography.bodySmall.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             }
-                            ref.read(savedQuestionsProvider.notifier).toggleSaveStatus(question.id!);
                           },
                         ),
                       const SizedBox(width: 4),
@@ -225,17 +260,69 @@ class QuizScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDimDark : AppColors.surfaceDimLight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'Q-ID: ${question.id}',
-                          style: AppTypography.labelSmall.copyWith(
-                            color: mutedColor,
-                            fontSize: 10,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Clipboard.setData(ClipboardData(text: question.displayCode));
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                backgroundColor: isDark ? const Color(0xFF1F2937) : const Color(0xFF111827),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                duration: const Duration(seconds: 2),
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 20),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Question ID #${question.displayCode} copied!',
+                                        style: AppTypography.bodySmall.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.surfaceDimDark : AppColors.surfaceDimLight,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'ID: #${question.displayCode}',
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: mutedColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.copy_rounded,
+                                  size: 13,
+                                  color: mutedColor,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

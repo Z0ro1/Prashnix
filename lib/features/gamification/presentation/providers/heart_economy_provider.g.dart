@@ -19,7 +19,7 @@ final class HeartEconomyProvider extends $NotifierProvider<HeartEconomy, int> {
         argument: null,
         retry: null,
         name: r'heartEconomyProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,7 +40,7 @@ final class HeartEconomyProvider extends $NotifierProvider<HeartEconomy, int> {
   }
 }
 
-String _$heartEconomyHash() => r'aeace34acbf2cf5cabf6a94ffbcef2c87f87264f';
+String _$heartEconomyHash() => r'5af603e9a96df355b82e7f62709de573c1d51a62';
 
 abstract class _$HeartEconomy extends $Notifier<int> {
   int build();

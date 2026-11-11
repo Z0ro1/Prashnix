@@ -82,7 +82,6 @@ class _InteractiveOptionPillState extends ConsumerState<InteractiveOptionPill> {
         textColor = isDark ? Colors.white : AppColors.error;
         break;
       case OptionState.defaultState:
-      default:
         coreColor = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
         bgColor = isDark ? AppColors.surfaceDimDark : AppColors.surfaceLight;
         borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;

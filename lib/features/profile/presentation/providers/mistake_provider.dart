@@ -21,13 +21,13 @@ class MistakeState {
 
   List<MistakeItemModel> get filteredMistakes {
     if (activeFilter == 'All') return mistakes;
-    return mistakes.where((m) => m.question.subjectTag == activeFilter).toList();
+    return mistakes.where((m) => m.question.formattedSubject == activeFilter).toList();
   }
 
   List<String> get availableFilters {
     final Set<String> filters = {'All'};
     for (var m in mistakes) {
-      filters.add(m.question.subjectTag);
+      filters.add(m.question.formattedSubject);
     }
     return filters.toList();
   }
@@ -114,6 +114,11 @@ class MistakeNotifier extends _$MistakeNotifier {
     ref.read(heartEconomyProvider.notifier).addHearts(1);
 
     // Refresh list
+    await _loadMistakes();
+  }
+
+  Future<void> removeMistake(String questionId) async {
+    await _mistakeRepo.removeMistake(questionId);
     await _loadMistakes();
   }
 }

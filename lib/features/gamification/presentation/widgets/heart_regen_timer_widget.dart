@@ -20,6 +20,9 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
   void initState() {
     super.initState();
     _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(heartEconomyProvider.notifier).checkAndApplyRegeneration();
+    });
   }
 
   void _startTimer() {
@@ -29,8 +32,8 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
           _secondsRemaining--;
         });
       } else {
-        // Trigger re-evaluation when timer hits 0
-        ref.read(heartEconomyProvider.notifier).evaluateRegeneration(DateTime.now());
+        // Trigger re-evaluation via SQLite timestamp when timer hits 0
+        ref.read(heartEconomyProvider.notifier).checkAndApplyRegeneration();
       }
     });
   }
@@ -45,15 +48,22 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
   Widget build(BuildContext context) {
     // Listen to changes from provider
     ref.listen<int>(heartEconomyProvider, (previous, next) {
-      setState(() {
-        _secondsRemaining = next;
-      });
+      if (mounted) {
+        setState(() {
+          _secondsRemaining = next;
+        });
+      }
     });
 
     if (_secondsRemaining <= 0) return const SizedBox.shrink();
 
-    final minutes = (_secondsRemaining ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_secondsRemaining % 60).toString().padLeft(2, '0');
+    final hours = _secondsRemaining ~/ 3600;
+    final minutes = (_secondsRemaining % 3600) ~/ 60;
+    final seconds = _secondsRemaining % 60;
+
+    final String timeStr = hours > 0
+        ? '${hours}h ${minutes.toString().padLeft(2, '0')}m'
+        : '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -72,7 +82,7 @@ class _HeartRegenTimerWidgetState extends ConsumerState<HeartRegenTimerWidget> {
           ),
           const SizedBox(width: 6),
           Text(
-            '+1 in $minutes:$seconds',
+            '+1 in $timeStr',
             style: AppTextStyles.label.copyWith(
               color: Colors.white70,
               fontWeight: FontWeight.bold,

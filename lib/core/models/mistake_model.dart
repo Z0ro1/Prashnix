@@ -1,5 +1,5 @@
 class MistakeModel {
-  final int? id;
+  final String? id;
   final String questionId;
   final String userAnswer;
   final int mistakeCount;
@@ -17,7 +17,7 @@ class MistakeModel {
 
   factory MistakeModel.fromMap(Map<String, dynamic> map) {
     return MistakeModel(
-      id: map['id'] as int?,
+      id: map['id']?.toString(),
       questionId: map['question_id'] as String,
       userAnswer: map['user_answer'] as String,
       mistakeCount: map['mistake_count'] as int? ?? 1,
@@ -28,7 +28,7 @@ class MistakeModel {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
+      'id': id ?? questionId,
       'question_id': questionId,
       'user_answer': userAnswer,
       'mistake_count': mistakeCount,

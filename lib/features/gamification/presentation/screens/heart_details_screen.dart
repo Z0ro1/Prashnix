@@ -7,7 +7,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/ad_service.dart';
 import '../widgets/heart_regen_timer_widget.dart';
-import '../../../profile/data/repositories/progress_repository.dart';
 import '../providers/heart_economy_provider.dart';
 
 class HeartDetailsScreen extends ConsumerStatefulWidget {
@@ -29,28 +28,18 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
   }
 
   Future<void> _loadAdCount() async {
-    final repo = ProgressRepository();
-    final dateStr = await repo.getLocalState('ad_hearts_date');
-    final countStr = await repo.getLocalState('ad_hearts_count') ?? '0';
-    
-    final now = DateTime.now();
-    final todayStr = '${now.year}-${now.month}-${now.day}';
-    
-    if (dateStr == todayStr) {
+    final count = await ref.read(heartEconomyProvider.notifier).getDailyHeartAdCount();
+    if (mounted) {
       setState(() {
-        _adsWatchedToday = int.tryParse(countStr) ?? 0;
-      });
-    } else {
-      setState(() {
-        _adsWatchedToday = 0;
+        _adsWatchedToday = count;
       });
     }
   }
 
   Color _getHeartColor(int hearts) {
-    if (hearts >= 20) return AppColors.bpmRed; // High - Red
-    if (hearts >= 5) return AppColors.foxOrange; // Low/Medium - Yellow/Orange
-    return Colors.grey; // Very low - Grey
+    if (hearts >= 5) return AppColors.bpmRed; // Full
+    if (hearts >= 2) return AppColors.foxOrange; // Ready for lesson
+    return Colors.grey; // Insufficient (< 2)
   }
 
   @override
@@ -123,7 +112,7 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
               const SizedBox(height: 40),
 
               // Ad Button
-              if (hearts < 20) ...[
+              if (hearts < 5) ...[
                 if (_adsWatchedToday >= 4)
                   Text(
                     'Daily Limit Reached (4/4 ads)',
@@ -144,7 +133,7 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
                         : const Icon(Icons.ondemand_video),
                       label: Text(
-                        'Watch Ad (+5 Hearts)',
+                        'Watch Ad (+2 Hearts)',
                         style: AppTypography.headlineMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -157,7 +146,7 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
                 ]
               ] else
                 Text(
-                  'You got enough hearts to start a lesson! Go play!',
+                  'You have full hearts (5/5)! Go play!',
                   style: AppTypography.headlineMedium.copyWith(color: AppColors.primaryGreenDark, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
@@ -181,17 +170,14 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
                       style: AppTypography.headlineLarge.copyWith(color: textColor, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
-                    _buildRule(Icons.play_arrow, 'Minimum 5 Hearts required to start any lesson.', textColor),
-                    _buildRule(Icons.remove_circle_outline, 'Every wrong answer costs you 2 Hearts.', textColor),
-                    _buildRule(Icons.timer, 'You passively regenerate 1 Heart every 30 minutes.', textColor),
-                    _buildRule(Icons.battery_charging_full, 'Max Capacity is 25 Hearts.', textColor),
+                    _buildRule(Icons.play_arrow, 'Each lesson costs 2 Hearts to start.', textColor),
+                    _buildRule(Icons.verified, 'No reduction in hearts on wrong questions.', textColor),
+                    _buildRule(Icons.timer, 'Hearts passively refill 1 per 2 hours (or fully at midnight IST).', textColor),
+                    _buildRule(Icons.battery_charging_full, 'Max capacity is 5 Hearts.', textColor),
                     _buildRule(Icons.local_fire_department, 'Get a 5-answer streak to instantly recover 2 Hearts.', textColor),
-                    _buildRule(Icons.ondemand_video, 'Watch up to 4 Ads per day to refill hearts (+5 Hearts each).', textColor),
-                    _buildRule(Icons.block, 'Ads cannot be watched if you already have 20 or more Hearts.', textColor),
-                    _buildRule(Icons.calendar_today, 'Daily ad limits reset automatically at midnight.', textColor),
-                    _buildRule(Icons.flash_on, 'If you run out of Energy Points (EP), Ads give +10 Bonus XP instead.', textColor),
-                    _buildRule(Icons.stars, 'Unlock weekly tests by watching an ad, if you run out of regular entry passes.', textColor),
-                    _buildRule(Icons.close, 'Quitting a lesson mid-way will show a penalty ad.', textColor),
+                    _buildRule(Icons.ondemand_video, 'Watch up to 4 Ads per day to refill hearts (+2 Hearts each).', textColor),
+                    _buildRule(Icons.block, 'Ads cannot be watched if you already have full Hearts (5/5).', textColor),
+                    _buildRule(Icons.calendar_today, 'Daily ad limits reset automatically at midnight IST.', textColor),
                   ],
                 ),
               ),
@@ -224,26 +210,47 @@ class _HeartDetailsScreenState extends ConsumerState<HeartDetailsScreen> {
   }
 
   void _watchAdForHearts(int currentHearts) {
+    if (_adsWatchedToday >= HeartEconomy.maxDailyHeartAds) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Daily ad limit reached (Max 4/day). Resets at midnight IST.')),
+      );
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isLoadingAd = true);
     
     AdMobService().showRewardedAd(
       type: AdRewardType.heartRefill,
       currentHearts: currentHearts,
-      onEarnedReward: () {
+      onAdClosed: () {
+        if (mounted) {
+          setState(() => _isLoadingAd = false);
+        }
+      },
+      onEarnedReward: () async {
+        final success = await ref.read(heartEconomyProvider.notifier).rewardAdWatched();
         if (!mounted) return;
         setState(() => _isLoadingAd = false);
-        // Grant hearts using HeartEconomyProvider to ensure Cloud Sync!
-        ref.read(heartEconomyProvider.notifier).addHearts(5);
-        _loadAdCount();
+        await _loadAdCount();
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully claimed 5 Hearts!'), backgroundColor: AppColors.success),
-        );
+        if (success) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text('+2 Hearts Claimed! (${ref.read(userStoreProvider).heartCount} ❤️)'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        } else {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Could not claim hearts. Ad limit reached or hearts full.')),
+          );
+        }
       },
       onError: (error) {
         if (!mounted) return;
         setState(() => _isLoadingAd = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text(error), backgroundColor: AppColors.error),
         );
       }

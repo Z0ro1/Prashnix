@@ -17,10 +17,11 @@ class SavedQuestionRepository {
     await db.insert(
       DbConstants.tableSavedQuestions,
       {
+        'id': questionId,
         'question_id': questionId,
         'saved_at': now,
       },
-      conflictAlgorithm: ConflictAlgorithm.ignore,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
     // Fire and forget to Supabase
@@ -73,22 +74,67 @@ class SavedQuestionRepository {
       DbConstants.tableSavedQuestions,
       columns: ['question_id'],
     );
-    return result.map((e) => e['question_id'] as String).toList();
+    return result
+        .map((e) => e['question_id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
   }
 
   Future<List<QuestionModel>> getSavedQuestions() async {
     final db = await _dbService.database;
     
     // First, get the ordered list of saved question IDs
-    final List<Map<String, dynamic>> savedRows = await db.query(
+    List<Map<String, dynamic>> savedRows = await db.query(
       DbConstants.tableSavedQuestions,
       columns: ['question_id'],
       orderBy: 'saved_at DESC',
     );
     
+    // If local cache is empty, attempt to restore from Supabase
+    if (savedRows.isEmpty) {
+      try {
+        final userId = SupabaseConfig.client.auth.currentUser?.id;
+        if (userId != null) {
+          final List<dynamic> serverSaved = await SupabaseConfig.client
+              .from('saved_questions')
+              .select()
+              .eq('user_id', userId)
+              .order('saved_at', ascending: false);
+
+          if (serverSaved.isNotEmpty) {
+            final batch = db.batch();
+            for (final row in serverSaved) {
+              final qId = row['question_id']?.toString();
+              if (qId != null && qId.isNotEmpty) {
+                batch.insert(
+                  DbConstants.tableSavedQuestions,
+                  {
+                    'id': row['id']?.toString() ?? qId,
+                    'question_id': qId,
+                    'saved_at': row['saved_at'] ?? DateTime.now().toIso8601String(),
+                  },
+                  conflictAlgorithm: ConflictAlgorithm.replace,
+                );
+              }
+            }
+            await batch.commit(noResult: true);
+
+            savedRows = await db.query(
+              DbConstants.tableSavedQuestions,
+              columns: ['question_id'],
+              orderBy: 'saved_at DESC',
+            );
+          }
+        }
+      } catch (_) {}
+    }
+
     if (savedRows.isEmpty) return [];
     
-    final List<String> savedIds = savedRows.map((e) => e['question_id'] as String).toList();
+    final List<String> savedIds = savedRows
+        .map((e) => e['question_id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
     
     // Use QuestionRepository to safely fetch them (from local or Supabase)
     // This ensures we never lose access to a saved question even if local cache is cleared.

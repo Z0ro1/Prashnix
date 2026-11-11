@@ -41,7 +41,7 @@ final class TimedExamNotifierProvider
   }
 }
 
-String _$timedExamNotifierHash() => r'5f96596ca15dc01b1ca3a2f46c0730bb5b2d7ad5';
+String _$timedExamNotifierHash() => r'76af071096e478f31648cac6fdde15d8c2d78dab';
 
 abstract class _$TimedExamNotifier extends $Notifier<TimedExamState> {
   TimedExamState build();

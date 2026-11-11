@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
-import '../../domain/services/ad_reward_service.dart';
+import '../../../../core/services/ad_service.dart';
+import '../../../../core/state/user_state.dart';
 import '../providers/heart_economy_provider.dart';
 
 class HeartRefillModalSheet extends ConsumerStatefulWidget {
@@ -14,6 +15,7 @@ class HeartRefillModalSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const HeartRefillModalSheet(),
     );
@@ -24,46 +26,63 @@ class HeartRefillModalSheet extends ConsumerStatefulWidget {
 }
 
 class _HeartRefillModalSheetState extends ConsumerState<HeartRefillModalSheet> {
-  final AdRewardService _adService = AdRewardService();
   bool _isLoadingAd = false;
+  int _dailyAdCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _adService.initialize();
+    _loadDailyAdCount();
   }
 
-  void _watchAd() {
+  Future<void> _loadDailyAdCount() async {
+    final count = await ref.read(heartEconomyProvider.notifier).getDailyHeartAdCount();
+    if (mounted) {
+      setState(() => _dailyAdCount = count);
+    }
+  }
+
+  void _watchAd() async {
+    final currentHearts = ref.read(userStoreProvider).heartCount;
+    if (_dailyAdCount >= HeartEconomy.maxDailyHeartAds) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Daily limit reached (Max 4 ads/day). Resets at midnight IST.')),
+      );
+      return;
+    }
+
     setState(() => _isLoadingAd = true);
     
-    _adService.showHeartRefillAd(
-      onRewardEarned: () async {
+    await AdMobService().showRewardedAd(
+      type: AdRewardType.heartRefill,
+      currentHearts: currentHearts,
+      onAdClosed: () {
+        if (mounted) {
+          setState(() => _isLoadingAd = false);
+        }
+      },
+      onEarnedReward: () async {
         final success = await ref.read(heartEconomyProvider.notifier).rewardAdWatched();
         if (mounted) {
+          setState(() => _isLoadingAd = false);
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('+2 Hearts restored!')),
+              SnackBar(content: Text('+2 Hearts restored! You have ${ref.read(userStoreProvider).heartCount} ❤️')),
             );
+            Navigator.of(context).pop();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Daily limit reached (4/4)')),
+              const SnackBar(content: Text('Daily limit reached (4/4 ads watched today)')),
             );
           }
         }
       },
-      onAdClosed: () {
-        if (mounted) {
-          setState(() => _isLoadingAd = false);
-          Navigator.of(context).pop();
-        }
-      },
-      onAdFailed: () {
+      onError: (error) {
         if (mounted) {
           setState(() => _isLoadingAd = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to load ad. Please try again later.')),
+            SnackBar(content: Text(error)),
           );
-          Navigator.of(context).pop();
         }
       },
     );
@@ -71,6 +90,9 @@ class _HeartRefillModalSheetState extends ConsumerState<HeartRefillModalSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final remainingAds = (HeartEconomy.maxDailyHeartAds - _dailyAdCount).clamp(0, HeartEconomy.maxDailyHeartAds);
+    final canWatch = remainingAds > 0;
+
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
       child: Container(
@@ -82,10 +104,12 @@ class _HeartRefillModalSheetState extends ConsumerState<HeartRefillModalSheet> {
           border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
         ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             const Icon(
               Icons.favorite_border,
               color: AppColors.accentRed,
@@ -99,24 +123,35 @@ class _HeartRefillModalSheetState extends ConsumerState<HeartRefillModalSheet> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You need at least 1 heart to start a lesson.',
+              'You need at least 2 hearts to start a lesson.',
               style: AppTextStyles.body.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
-            CustomButton(
-              text: 'Watch Short Video (+2 Hearts)',
-              onPressed: _isLoadingAd ? null : _watchAd,
-              variant: ButtonVariant.primaryMint,
-              icon: _isLoadingAd ? Icons.hourglass_empty : Icons.play_circle_fill,
+            const SizedBox(height: 12),
+            Text(
+              canWatch 
+                  ? 'Daily Ads: $_dailyAdCount / ${HeartEconomy.maxDailyHeartAds} ($remainingAds left today)'
+                  : 'Daily limit reached (4/4 ads). Resets at midnight IST.',
+              style: AppTextStyles.label.copyWith(color: canWatch ? Colors.white60 : AppColors.error),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            if (canWatch) ...[
+              CustomButton(
+                text: 'Watch Video (+2 Hearts)',
+                onPressed: _isLoadingAd ? null : _watchAd,
+                variant: ButtonVariant.primaryMint,
+                icon: _isLoadingAd ? Icons.hourglass_empty : Icons.play_circle_fill,
+              ),
+              const SizedBox(height: 16),
+            ],
             CustomButton(
-              text: 'Wait for Hourly Auto-Regen',
+              text: 'Wait for Auto-Regen (1 heart / 2 hrs)',
               onPressed: () => Navigator.of(context).pop(),
               variant: ButtonVariant.outline,
             ),
           ],
+        ),
         ),
       ),
       ),

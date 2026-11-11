@@ -42,6 +42,9 @@ class DatabaseService {
   Future<void> _onConfigure(Database db) async {
     // Enable foreign keys
     await db.execute('PRAGMA foreign_keys = ON');
+    // Enable WAL (Write-Ahead Logging) and NORMAL sync for 3x-5x faster cold start disk I/O
+    await db.rawQuery('PRAGMA journal_mode = WAL');
+    await db.execute('PRAGMA synchronous = NORMAL');
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -112,6 +115,18 @@ class DatabaseService {
       
       await db.execute(DbConstants.indexQuestionsSubject);
       await db.execute(DbConstants.indexMistakesCleared);
+    }
+    if (oldVersion < 6) {
+      // Version 6 changes saved_questions id to TEXT PRIMARY KEY (to store Supabase UUIDs without mismatch)
+      await db.execute('DROP TABLE IF EXISTS ${DbConstants.tableSavedQuestions}');
+      await db.execute(DbConstants.createSavedQuestionsTable);
+    }
+    if (oldVersion < 7) {
+      // Version 7 adds display_id to questions table and clears cached questions to re-fetch with 6-digit display_id
+      try {
+        await db.execute('ALTER TABLE ${DbConstants.tableQuestions} ADD COLUMN display_id TEXT');
+      } catch (_) {}
+      await db.execute('DELETE FROM ${DbConstants.tableQuestions}');
     }
   }
 }

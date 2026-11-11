@@ -12,14 +12,13 @@ class AppLifecycleHeartHandler extends ConsumerStatefulWidget {
 }
 
 class _AppLifecycleHeartHandlerState extends ConsumerState<AppLifecycleHeartHandler> with WidgetsBindingObserver {
-  // In a real app, this should be fetched from SQLite ProgressRepository on boot
-  final DateTime _lastRegenTime = DateTime.now();
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _evaluateHearts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _evaluateHearts();
+    });
   }
 
   @override
@@ -36,8 +35,8 @@ class _AppLifecycleHeartHandlerState extends ConsumerState<AppLifecycleHeartHand
   }
 
   void _evaluateHearts() {
-    // Trigger evaluation on provider
-    ref.read(heartEconomyProvider.notifier).evaluateRegeneration(_lastRegenTime);
+    // Trigger evaluation on provider using persistent SQLite state
+    ref.read(heartEconomyProvider.notifier).checkAndApplyRegeneration();
   }
 
   @override

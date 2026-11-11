@@ -20,7 +20,7 @@ final class SkillTreeNotifierProvider
         argument: null,
         retry: null,
         name: r'skillTreeProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -33,7 +33,7 @@ final class SkillTreeNotifierProvider
   SkillTreeNotifier create() => SkillTreeNotifier();
 }
 
-String _$skillTreeNotifierHash() => r'fc439e088a5a6ab9c82c384e803ac63e0e5462ba';
+String _$skillTreeNotifierHash() => r'70989730a16f3cc8d5f9ba994791fb0eef380ef2';
 
 abstract class _$SkillTreeNotifier extends $AsyncNotifier<List<SkillUnit>> {
   FutureOr<List<SkillUnit>> build();

@@ -1,0 +1,57 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- Body Shadow Base -->
+    <path
+        android:fillColor="#46A302"
+        android:pathData="M36,6C18,6 8,18 8,36C8,54 20,66 36,66C52,66 64,54 64,36C64,18 54,6 36,6Z"/>
+    <!-- Body Face -->
+    <path
+        android:fillColor="#58CC02"
+        android:pathData="M36,4C19,4 10,16 10,34C10,51 21,63 36,63C51,63 62,51 62,34C62,16 53,4 36,4Z"/>
+    <!-- Headband (Blue Athletic) -->
+    <path
+        android:fillColor="#1CB0F6"
+        android:pathData="M12,18C18,15 54,15 60,18C61,21 61,24 59,26C53,23 19,23 13,26C11,24 11,21 12,18Z"/>
+    <path
+        android:fillColor="#1899D6"
+        android:pathData="M12,24C20,21 52,21 60,24C59,26 57,27 55,27C47,25 25,25 17,27C15,27 13,26 12,24Z"/>
+    <!-- Big Cheerful Eyes (Left & Right) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,36C24,42 28,45 32,45C36,45 38,42 38,36C38,30 35,27 32,27C28,27 24,30 24,36Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,36C40,42 44,45 48,45C52,45 54,42 54,36C54,30 51,27 48,27C44,27 40,30 40,36Z"/>
+    <!-- Eye Pupils (Looking bright & excited) -->
+    <path
+        android:fillColor="#4B4B4B"
+        android:pathData="M31,36C31,39 33,41 35,41C37,41 38,39 38,36C38,33 37,32 35,32C33,32 31,33 31,36Z"/>
+    <path
+        android:fillColor="#4B4B4B"
+        android:pathData="M47,36C47,39 49,41 51,41C53,41 54,39 54,36C54,33 53,32 51,32C49,32 47,33 47,36Z"/>
+    <!-- Star Highlights -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,34C33,35 34,36 35,36C36,36 36,35 36,34C36,33 36,33 35,33C34,33 33,33 33,34Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49,34C49,35 50,36 51,36C52,36 52,35 52,34C52,33 52,33 51,33C50,33 49,33 49,34Z"/>
+    <!-- Happy Smile / Beak -->
+    <path
+        android:fillColor="#FF9600"
+        android:pathData="M31,43C31,43 36,41 41,43C42,47 38,51 36,51C34,51 30,47 31,43Z"/>
+    <path
+        android:fillColor="#FFC800"
+        android:pathData="M33,43C34,43 36,42 39,43C40,45 37,48 36,48C35,48 33,45 33,43Z"/>
+    <!-- Rosy Cheeks -->
+    <path
+        android:fillColor="#FFDFE0"
+        android:pathData="M18,44C18,47 21,49 24,49C27,49 28,47 28,44C28,42 27,41 24,41C21,41 18,42 18,44Z"/>
+    <path
+        android:fillColor="#FFDFE0"
+        android:pathData="M48,44C48,47 51,49 54,49C57,49 58,47 58,44C58,42 57,41 54,41C51,41 48,42 48,44Z"/>
+</vector>
+

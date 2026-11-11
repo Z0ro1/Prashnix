@@ -8,34 +8,40 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'core/config/supabase_config.dart';
 import 'core/database/database_service.dart';
 import 'core/services/sync_queue_service.dart';
+import 'core/services/widget_sync_service.dart';
+import 'core/services/ad_service.dart';
 import 'core/widgets/global_error_boundary.dart';
 import 'core/navigation/app_router.dart';
 import 'features/profile/presentation/providers/settings_provider.dart';
+import 'features/gamification/presentation/widgets/app_lifecycle_heart_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/offline_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Force 120Hz / High Refresh Rate on Android
-  if (Platform.isAndroid) {
-    try {
-      await FlutterDisplayMode.setHighRefreshRate();
-    } catch (e) {
-      debugPrint('Failed to set high refresh rate: $e');
+  // Initialize Database and Supabase concurrently (cuts bootstrap time in half)
+  await Future.wait([
+    DatabaseService().database,
+    SupabaseConfig.initialize(),
+    WidgetSyncService.initialize(),
+  ]);
+
+  // Defer non-critical hardware & SDK configurations after the first frame renders
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // Set 120Hz / High Refresh Rate on Android (non-blocking)
+    if (Platform.isAndroid) {
+      try {
+        await FlutterDisplayMode.setHighRefreshRate();
+      } catch (e) {
+        debugPrint('Failed to set high refresh rate: $e');
+      }
     }
-  }
 
-  // Initialize Database
-  final dbService = DatabaseService();
-  await dbService.database;
-
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
-
-  // Defer non-critical SDKs to avoid slowing down first frame
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    MobileAds.instance.initialize();
+    if (Platform.isAndroid || Platform.isIOS) {
+      await MobileAds.instance.initialize();
+      AdMobService().preLoadAds();
+    }
     SyncQueueService().initialize();
   });
 
@@ -55,7 +61,9 @@ class PrashnixApp extends ConsumerWidget {
 
     return GlobalErrorBoundary(
       child: MaterialApp.router(
-        builder: (context, child) => OfflineWrapper(child: child!),
+        builder: (context, child) => AppLifecycleHeartHandler(
+          child: OfflineWrapper(child: child!),
+        ),
         title: 'Prashnix',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,

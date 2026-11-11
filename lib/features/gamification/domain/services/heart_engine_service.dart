@@ -15,9 +15,9 @@ class HeartEngineResult {
 
 class HeartEngineService {
   static const int maxHearts = 5;
-  static const int heartCostPerLesson = 1;
+  static const int heartCostPerLesson = 2;
   static const int heartPenaltyPerMistake = 0;
-  static const int regenIntervalMinutes = 60;
+  static const int regenIntervalMinutes = 120; // 1 heart per 2 hours (full refill in 10 hours)
   
   static bool _tzInitialized = false;
   static late final tz.Location _istLocation;
@@ -34,8 +34,13 @@ class HeartEngineService {
     }
   }
 
+  tz.Location get istLocation {
+    if (!_tzInitialized) _initTz();
+    return _istLocation;
+  }
+
   /// Calculates regenerated hearts based on time elapsed since last regen,
-  /// factoring in midnight IST resets and hourly ticks.
+  /// factoring in midnight IST resets and 2-hour rolling intervals.
   HeartEngineResult calculateRegeneratedHearts(int currentHearts, DateTime lastRegenTime, {DateTime? nowTime}) {
     if (!_tzInitialized) _initTz();
     
@@ -43,11 +48,21 @@ class HeartEngineService {
     final nowIst = tz.TZDateTime.from(now, _istLocation);
     final lastRegenIst = tz.TZDateTime.from(lastRegenTime.toUtc(), _istLocation);
 
+    // Anti-Cheat / Clock Rollback Protection:
+    // If the device clock was turned backward or an impossible time anomaly occurred
+    if (nowIst.isBefore(lastRegenIst)) {
+      return HeartEngineResult(
+        updatedHearts: currentHearts.clamp(0, maxHearts),
+        nextRegenTime: now,
+        secondsUntilNextRegen: currentHearts >= maxHearts ? 0 : regenIntervalMinutes * 60,
+      );
+    }
+
     // 1. Check for Midnight IST Reset
-    // If 'now' is on a different day than 'lastRegen', or multiple days have passed.
+    // If 'now' is on a different day than 'lastRegen', or midnight IST has passed.
     final lastMidnight = tz.TZDateTime(_istLocation, nowIst.year, nowIst.month, nowIst.day);
     if (lastRegenIst.isBefore(lastMidnight)) {
-      // Midnight reset triggered
+      // Midnight reset triggered -> Full Refill
       return HeartEngineResult(
         updatedHearts: maxHearts,
         nextRegenTime: now,
@@ -55,7 +70,7 @@ class HeartEngineService {
       );
     }
 
-    // 2. Calculate Hourly Regeneration
+    // 2. Already at max hearts
     if (currentHearts >= maxHearts) {
       return HeartEngineResult(
         updatedHearts: maxHearts,
@@ -64,6 +79,7 @@ class HeartEngineService {
       );
     }
 
+    // 3. Calculate 2-Hour Interval Regeneration
     final durationSinceLastRegen = nowIst.difference(lastRegenIst);
     final totalMinutesElapsed = durationSinceLastRegen.inMinutes;
 
@@ -71,21 +87,30 @@ class HeartEngineService {
       final heartsToRegen = totalMinutesElapsed ~/ regenIntervalMinutes;
       final newHearts = (currentHearts + heartsToRegen).clamp(0, maxHearts);
       
+      if (newHearts >= maxHearts) {
+        return HeartEngineResult(
+          updatedHearts: maxHearts,
+          nextRegenTime: now,
+          secondsUntilNextRegen: 0,
+        );
+      }
+
       // Calculate the exact time the LAST regenerated heart was credited to maintain accurate rolling windows
       final exactRegenMinutes = heartsToRegen * regenIntervalMinutes;
       final exactLastRegenTime = lastRegenTime.add(Duration(minutes: exactRegenMinutes));
       
-      final remainingSeconds = (regenIntervalMinutes * 60) - nowIst.difference(tz.TZDateTime.from(exactLastRegenTime, _istLocation)).inSeconds;
+      final elapsedSinceLastCredit = nowIst.difference(tz.TZDateTime.from(exactLastRegenTime.toUtc(), _istLocation)).inSeconds;
+      final remainingSeconds = ((regenIntervalMinutes * 60) - elapsedSinceLastCredit).clamp(0, regenIntervalMinutes * 60);
 
       return HeartEngineResult(
         updatedHearts: newHearts,
         nextRegenTime: exactLastRegenTime,
-        secondsUntilNextRegen: newHearts == maxHearts ? 0 : remainingSeconds,
+        secondsUntilNextRegen: remainingSeconds,
       );
     }
 
-    // 3. Less than an hour passed, just return the remaining time
-    final remainingSeconds = (regenIntervalMinutes * 60) - durationSinceLastRegen.inSeconds;
+    // 4. Less than 2 hours passed, return remaining seconds
+    final remainingSeconds = ((regenIntervalMinutes * 60) - durationSinceLastRegen.inSeconds).clamp(0, regenIntervalMinutes * 60);
     
     return HeartEngineResult(
       updatedHearts: currentHearts,

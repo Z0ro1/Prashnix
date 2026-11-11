@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- Body Shadow Base -->
+    <path
+        android:fillColor="#46A302"
+        android:pathData="M36,6C18,6 8,18 8,36C8,54 20,66 36,66C52,66 64,54 64,36C64,18 54,6 36,6Z"/>
+    <!-- Body Face -->
+    <path
+        android:fillColor="#58CC02"
+        android:pathData="M36,4C19,4 10,16 10,34C10,51 21,63 36,63C51,63 62,51 62,34C62,16 53,4 36,4Z"/>
+    <!-- Confetti Party Sparkles -->
+    <!-- Gold Star 1 -->
+    <path
+        android:fillColor="#FFC800"
+        android:pathData="M14,14L15.5,17.5L19,18L16.2,20.5L17,24L14,22L11,24L11.8,20.5L9,18L12.5,17.5Z"/>
+    <!-- Gold Star 2 -->
+    <path
+        android:fillColor="#FFC800"
+        android:pathData="M56,12L57.5,15.5L61,16L58.2,18.5L59,22L56,20L53,22L53.8,18.5L51,16L54.5,15.5Z"/>
+    <!-- Blue Confetti -->
+    <path
+        android:fillColor="#1CB0F6"
+        android:pathData="M16,30L20,28L18,34Z"/>
+    <!-- Cool Black Sunglasses (Bridge & Frames) -->
+    <path
+        android:fillColor="#1F2937"
+        android:pathData="M16,30C20,29 52,29 56,30C58,31 58,42 53,44C47,46 39,44 38,36C38,34 34,34 34,36C33,44 25,46 19,44C14,42 14,31 16,30Z"/>
+    <!-- Sunglasses Lens Highlights (Glossy Glare) -->
+    <path
+        android:fillColor="#4B5563"
+        android:pathData="M19,34L25,32L21,41L18,39Z"/>
+    <path
+        android:fillColor="#4B5563"
+        android:pathData="M41,34L47,32L43,41L40,39Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M23,33L26,32.5L25,36L23,35Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,33L48,32.5L47,36L45,35Z"/>
+    <!-- Smug Victorious Smile -->
+    <path
+        android:fillColor="#FF9600"
+        android:pathData="M31,46C31,46 35,45 41,47C42,50 38,53 36,53C33,53 31,50 31,46Z"/>
+    <path
+        android:fillColor="#FFC800"
+        android:pathData="M33,46C35,45 37,45 39,47C40,49 37,51 36,51C34,51 33,49 33,46Z"/>
+</vector>
+

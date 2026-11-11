@@ -35,7 +35,7 @@ final class SavedQuestionsNotifierProvider
 }
 
 String _$savedQuestionsNotifierHash() =>
-    r'2e88eda6990a4d186c423ac091854f8db761f997';
+    r'88678d720d0d0778e8332f481366d33cf4faf931';
 
 abstract class _$SavedQuestionsNotifier
     extends $AsyncNotifier<List<QuestionModel>> {

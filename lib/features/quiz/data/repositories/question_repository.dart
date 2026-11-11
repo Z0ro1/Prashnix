@@ -25,36 +25,58 @@ class QuestionRepository {
     return maps.map((map) => QuestionModel.fromMap(map)).toList();
   }
 
-  Future<List<QuestionModel>> getQuestionsByNode(String nodeId) async {
+  Future<List<QuestionModel>> getQuestionsByNode(String nodeId, {int lessonIndex = 0}) async {
     final db = await _dbService.database;
     final subjectTag = nodeId;
+    String? targetLessonId;
 
     // 1. Try to fetch freshest questions from Supabase (Real-time sync)
     try {
       if (kDebugMode) {
-        print('[QuestionRepository] Fetching freshest questions from Supabase for node: $subjectTag...');
+        print('[QuestionRepository] Fetching lessons and questions for node: $subjectTag, lessonIndex: $lessonIndex...');
       }
-      // Since questions belong to lessons, and lessons belong to nodes, we join them
-      final response = await SupabaseConfig.client
-          .from('questions')
-          .select('*, lessons!inner(node_id)')
-          .eq('lessons.node_id', subjectTag)
-          .limit(50);
+
+      // Fetch ordered lessons for this node
+      final lessonsResponse = await SupabaseConfig.client
+          .from('lessons')
+          .select('id, title, order_index')
+          .eq('node_id', subjectTag)
+          .order('order_index', ascending: true);
+
+      if (lessonsResponse.isNotEmpty) {
+        final safeIndex = (lessonIndex >= 0 && lessonIndex < lessonsResponse.length)
+            ? lessonIndex
+            : (lessonIndex % lessonsResponse.length);
+        targetLessonId = lessonsResponse[safeIndex]['id']?.toString();
+      }
+
+      // Fetch questions specifically for this lesson if targetLessonId found, otherwise by node
+      List<dynamic> response;
+      if (targetLessonId != null) {
+        response = await SupabaseConfig.client
+            .from('questions')
+            .select('*')
+            .eq('lesson_id', targetLessonId)
+            .limit(30);
+      } else {
+        response = await SupabaseConfig.client
+            .from('questions')
+            .select('*, lessons!inner(node_id)')
+            .eq('lessons.node_id', subjectTag)
+            .limit(50);
+      }
 
       if (response.isNotEmpty) {
         final batch = db.batch();
-        
-        // Clear local cache for this node to ensure deleted questions are actually removed locally
-        batch.delete(
-          DbConstants.tableQuestions, 
-          where: 'subject_tag = ?', 
-          whereArgs: [subjectTag]
-        );
 
         for (final row in response) {
-          final content = row['content'] as Map<String, dynamic>? ?? {};
+          final rawContent = row['content'];
+          final content = (rawContent is Map) ? rawContent.cast<String, dynamic>() : <String, dynamic>{};
           final text = content['text'] as String? ?? 'Empty Question';
-          final options = List<String>.from(content['options'] as List? ?? []);
+          final rawOptions = content['options'];
+          final options = (rawOptions is List)
+              ? rawOptions.map((e) => e?.toString() ?? '').toList()
+              : <String>[];
           final explanation = content['explanation'] as String?;
           final pyqYear = content['pyq_year'] as int?;
           final districtTag = content['district_tag'] as String?;
@@ -76,12 +98,16 @@ class QuestionRepository {
             optD: optD,
           );
 
+          final lessonIdTag = row['lesson_id']?.toString() ?? targetLessonId;
+          final displayId = row['display_id']?.toString();
+
           batch.insert(
             DbConstants.tableQuestions,
             {
               'id': row['id'],
+              'display_id': displayId,
               'subject_tag': subjectTag,
-              'subtopic_tag': row['lesson_id'],
+              'subtopic_tag': lessonIdTag,
               'question_text': text,
               'option_a': optA,
               'option_b': optB,
@@ -97,7 +123,7 @@ class QuestionRepository {
         }
         await batch.commit(noResult: true);
         if (kDebugMode) {
-          print('[QuestionRepository] Synced ${response.length} questions to local DB.');
+          print('[QuestionRepository] Synced ${response.length} questions to local DB for lesson $targetLessonId.');
         }
       }
     } catch (e) {
@@ -107,12 +133,38 @@ class QuestionRepository {
     }
 
     // 2. Fetch from local SQLite and return
-    List<Map<String, dynamic>> questionMaps = await db.query(
-      DbConstants.tableQuestions,
-      where: 'subject_tag = ?',
-      whereArgs: [subjectTag],
-      limit: 25,
-    );
+    List<Map<String, dynamic>> questionMaps = [];
+    if (targetLessonId != null) {
+      questionMaps = await db.query(
+        DbConstants.tableQuestions,
+        where: 'subject_tag = ? AND subtopic_tag = ?',
+        whereArgs: [subjectTag, targetLessonId],
+        limit: 25,
+      );
+    }
+
+    // Fallback: Offset by lessonIndex * 25
+    if (questionMaps.isEmpty) {
+      final safeLessonIndex = lessonIndex >= 0 ? lessonIndex : 0;
+      final offset = safeLessonIndex * 25;
+      questionMaps = await db.query(
+        DbConstants.tableQuestions,
+        where: 'subject_tag = ?',
+        whereArgs: [subjectTag],
+        offset: offset,
+        limit: 25,
+      );
+
+      // If offset exceeds available rows, wrap back to the first 25
+      if (questionMaps.isEmpty) {
+        questionMaps = await db.query(
+          DbConstants.tableQuestions,
+          where: 'subject_tag = ?',
+          whereArgs: [subjectTag],
+          limit: 25,
+        );
+      }
+    }
 
     return questionMaps.map((map) => QuestionModel.fromMap(map)).toList();
   }
@@ -150,9 +202,13 @@ class QuestionRepository {
         if (response.isNotEmpty) {
           final batch = db.batch();
           for (final row in response) {
-            final content = row['content'] as Map<String, dynamic>? ?? {};
+            final rawContent = row['content'];
+            final content = (rawContent is Map) ? rawContent.cast<String, dynamic>() : <String, dynamic>{};
             final text = content['text'] as String? ?? 'Empty Question';
-            final options = List<String>.from(content['options'] as List? ?? []);
+            final rawOptions = content['options'];
+            final options = (rawOptions is List)
+                ? rawOptions.map((e) => e?.toString() ?? '').toList()
+                : <String>[];
             final explanation = content['explanation'] as String?;
             final pyqYear = content['pyq_year'] as int?;
             final districtTag = content['district_tag'] as String?;
@@ -173,11 +229,13 @@ class QuestionRepository {
               optC: optC,
               optD: optD,
             );
+            final displayId = row['display_id']?.toString();
 
             batch.insert(
               DbConstants.tableQuestions,
               {
                 'id': row['id'],
+                'display_id': displayId,
                 'subject_tag': 'unknown',
                 'subtopic_tag': row['lesson_id'],
                 'question_text': text,

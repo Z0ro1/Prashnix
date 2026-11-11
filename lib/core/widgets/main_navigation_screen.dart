@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:app_links/app_links.dart';
 import '../../features/profile/presentation/providers/settings_provider.dart';
+import '../../features/gamification/presentation/providers/streak_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/user_state.dart';
 import '../../features/skill_tree/data/repositories/sync_service.dart';
-import '../../features/skill_tree/presentation/providers/skill_tree_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 
@@ -28,15 +29,30 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
+    _initHomeWidgetListener();
+  }
+
+  void _initHomeWidgetListener() {
+    final appLinks = AppLinks();
+    appLinks.getInitialLink().then((Uri? uri) {
+      if (uri != null && (uri.scheme == 'prashnix' || uri.toString().contains('start_lesson'))) {
+        widget.navigationShell.goBranch(0);
+      }
+    });
+
+    appLinks.uriLinkStream.listen((Uri? uri) {
+      if (uri != null && (uri.scheme == 'prashnix' || uri.toString().contains('start_lesson'))) {
+        widget.navigationShell.goBranch(0);
+      }
+    });
   }
 
   Future<void> _loadUserProfile() async {
     try {
       await ref.read(userStoreProvider.notifier).refreshProfile();
-      // Sync progress from cloud to SQLite
+      ref.read(streakProvider);
+      // Sync progress from cloud to SQLite in background without interrupting initial render
       await SyncService().pullProgress();
-      // Refresh the skill tree state so it loads the newly downloaded progress
-      ref.invalidate(skillTreeProvider);
     } catch (e) {
       debugPrint('Error loading profile: $e');
     }

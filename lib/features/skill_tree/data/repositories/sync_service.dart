@@ -96,7 +96,7 @@ class SyncService {
         await db.insert(
           DbConstants.tableSavedQuestions,
           {
-            'id': row['id'],
+            'id': row['id']?.toString() ?? qId,
             'question_id': qId,
             'saved_at': row['saved_at'] ?? DateTime.now().toIso8601String(),
           },

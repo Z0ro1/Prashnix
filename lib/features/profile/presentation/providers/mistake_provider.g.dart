@@ -41,7 +41,7 @@ final class MistakeNotifierProvider
   }
 }
 
-String _$mistakeNotifierHash() => r'3bbf6c3f898e297008d18a995ae9ab2183af0041';
+String _$mistakeNotifierHash() => r'9eecce27a2905d3db1a8de29eb258c2f12bb40ff';
 
 abstract class _$MistakeNotifier extends $Notifier<MistakeState> {
   MistakeState build();

@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import '../../../../core/database/database_service.dart';
 import '../../../../core/database/db_constants.dart';
 import '../../../../core/models/mistake_model.dart';
@@ -32,16 +33,21 @@ class MistakeRepository {
           'is_cleared': 0, // Reset to not cleared
           'last_failed_at': now,
         },
-        where: 'id = ?',
-        whereArgs: [mistake.id],
+        where: 'question_id = ?',
+        whereArgs: [questionId],
       );
     } else {
       final newMistake = MistakeModel(
+        id: questionId,
         questionId: questionId,
         userAnswer: userAnswer,
         lastFailedAt: now,
       );
-      await db.insert(DbConstants.tableMistakes, newMistake.toMap());
+      await db.insert(
+        DbConstants.tableMistakes,
+        newMistake.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
 
     // Fire and forget to Supabase
@@ -93,6 +99,29 @@ class MistakeRepository {
         await supabase.from('user_mistakes').update({
           'is_cleared': true,
         }).eq('user_id', userId).eq('question_id', questionId);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> removeMistake(String questionId) async {
+    final db = await _dbService.database;
+
+    await db.delete(
+      DbConstants.tableMistakes,
+      where: 'question_id = ?',
+      whereArgs: [questionId],
+    );
+
+    // Fire and forget to Supabase
+    try {
+      final supabase = SupabaseConfig.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        await supabase
+            .from('user_mistakes')
+            .delete()
+            .eq('user_id', userId)
+            .eq('question_id', questionId);
       }
     } catch (_) {}
   }
