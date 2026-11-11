@@ -15,3 +15,8 @@
 
 # Ignore missing Play Core classes (fixes R8 build error)
 -dontwarn com.google.android.play.core.**
+
+# Prashnix Activities and AppWidget Providers
+-keep class com.CREXST.streak.MainActivity { *; }
+-keep class com.CREXST.streak.PrashnixStreakWidgetProvider { *; }
+
