@@ -101,6 +101,7 @@ flutter:
     - assets/icon/
     - assets/audio/
     - assets/lottie/
+    - assets/leagues/
     - .env
 
   fonts:

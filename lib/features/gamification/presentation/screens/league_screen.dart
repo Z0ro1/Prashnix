@@ -63,85 +63,156 @@ class _LeagueScreenState extends ConsumerState<LeagueScreen> with SingleTickerPr
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(10),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 48,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                const Icon(Icons.emoji_events_rounded, color: AppColors.primaryGreen, size: 28),
-                const SizedBox(width: 10),
-                Text(
-                  'League System Guide',
-                  style: AppTypography.headlineMedium.copyWith(color: textColor, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Compete with learners across your district and Maharashtra. Do daily lessons to gain XP, climb tiers, and unlock exclusive badges.',
-              style: AppTypography.bodyMedium.copyWith(color: mutedColor),
-            ),
-            const SizedBox(height: 18),
-            _buildRuleRow(
-              icon: Icons.arrow_upward_rounded,
-              color: AppColors.primaryGreen,
-              title: 'Promotion Zone (Top 10)',
-              subtitle: 'Advance to the next higher league at the end of each week.',
-              textColor: textColor,
-              mutedColor: mutedColor,
-            ),
-            const SizedBox(height: 14),
-            _buildRuleRow(
-              icon: Icons.shield_rounded,
-              color: AppColors.waterBlue,
-              title: 'Safe Zone (Rank 11 - 25)',
-              subtitle: 'Maintain your current league status for the upcoming week.',
-              textColor: textColor,
-              mutedColor: mutedColor,
-            ),
-            const SizedBox(height: 14),
-            _buildRuleRow(
-              icon: Icons.bolt_rounded,
-              color: AppColors.stepOrange,
-              title: 'XP Multipliers & Streaks',
-              subtitle: 'Flawless lessons award +120 XP, while milestone chests grant +100 XP.',
-              textColor: textColor,
-              mutedColor: mutedColor,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text('GOT IT', style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(Icons.emoji_events_rounded, color: AppColors.primaryGreen, size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    'League System Guide',
+                    style: AppTypography.headlineMedium.copyWith(color: textColor, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                'Compete with learners across your district and Maharashtra. Do daily lessons to gain XP, climb tiers, and unlock exclusive badges.',
+                style: AppTypography.bodyMedium.copyWith(color: mutedColor),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'League Tiers Ladder',
+                style: AppTypography.headlineSmall.copyWith(color: textColor, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: LeagueTier.tiers.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) {
+                    final tier = LeagueTier.tiers[i];
+                    return Container(
+                      width: 96,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.backgroundDark : AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: tier.primaryColor.withValues(alpha: 0.35),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            tier.badgeAsset,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(tier.icon, color: tier.primaryColor, size: 40),
+                          ),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              tier.name.replaceAll(' League', ''),
+                              style: AppTypography.labelMedium.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${tier.minXp} XP',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: tier.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildRuleRow(
+                icon: Icons.arrow_upward_rounded,
+                color: AppColors.primaryGreen,
+                title: 'Promotion Zone (Top 10)',
+                subtitle: 'Advance to the next higher league at the end of each week.',
+                textColor: textColor,
+                mutedColor: mutedColor,
+              ),
+              const SizedBox(height: 14),
+              _buildRuleRow(
+                icon: Icons.shield_rounded,
+                color: AppColors.waterBlue,
+                title: 'Safe Zone (Rank 11 - 25)',
+                subtitle: 'Maintain your current league status for the upcoming week.',
+                textColor: textColor,
+                mutedColor: mutedColor,
+              ),
+              const SizedBox(height: 14),
+              _buildRuleRow(
+                icon: Icons.bolt_rounded,
+                color: AppColors.stepOrange,
+                title: 'XP Multipliers & Streaks',
+                subtitle: 'Flawless lessons award +120 XP, while milestone chests grant +100 XP.',
+                textColor: textColor,
+                mutedColor: mutedColor,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('GOT IT', style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -361,31 +432,49 @@ class _LeagueScreenState extends ConsumerState<LeagueScreen> with SingleTickerPr
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 90px Circular Tier Shield Emblem matching Profile's 90px Avatar
-                Container(
+                // 90px 3D League Badge Emblem
+                SizedBox(
                   width: 90,
                   height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [currentTier.primaryColor, currentTier.secondaryColor],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: currentTier.primaryColor.withValues(alpha: isDark ? 0.35 : 0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: currentTier.primaryColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Image.asset(
+                        currentTier.badgeAsset,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [currentTier.primaryColor, currentTier.secondaryColor],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(currentTier.icon, color: Colors.white, size: 40),
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      currentTier.icon,
-                      color: Colors.white,
-                      size: 46,
-                    ),
                   ),
                 ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
 

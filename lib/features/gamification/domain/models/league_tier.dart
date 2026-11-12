@@ -12,6 +12,7 @@ class LeagueTier {
   final IconData icon;
   final String description;
   final int tierLevel; // 1 to 6
+  final String badgeAsset;
 
   const LeagueTier({
     required this.name,
@@ -22,6 +23,7 @@ class LeagueTier {
     required this.icon,
     required this.description,
     required this.tierLevel,
+    this.badgeAsset = 'assets/leagues/bronze.png',
   });
 
   static const List<LeagueTier> tiers = [
@@ -34,6 +36,7 @@ class LeagueTier {
       icon: Icons.shield_rounded,
       description: 'Kickstart your streak & rise up!',
       tierLevel: 1,
+      badgeAsset: 'assets/leagues/bronze.png',
     ),
     LeagueTier(
       name: 'Silver League',
@@ -44,6 +47,7 @@ class LeagueTier {
       icon: Icons.shield_rounded,
       description: 'Consistent learner building daily momentum!',
       tierLevel: 2,
+      badgeAsset: 'assets/leagues/silver.png',
     ),
     LeagueTier(
       name: 'Gold League',
@@ -54,6 +58,7 @@ class LeagueTier {
       icon: Icons.workspace_premium_rounded,
       description: 'Dedicated contender climbing district ranks!',
       tierLevel: 3,
+      badgeAsset: 'assets/leagues/gold.png',
     ),
     LeagueTier(
       name: 'Platinum League',
@@ -64,6 +69,7 @@ class LeagueTier {
       icon: Icons.military_tech_rounded,
       description: 'Elite competitive aspirant mastering syllabus!',
       tierLevel: 4,
+      badgeAsset: 'assets/leagues/platinum.png',
     ),
     LeagueTier(
       name: 'Diamond League',
@@ -74,6 +80,7 @@ class LeagueTier {
       icon: Icons.diamond_rounded,
       description: 'Top-tier master of Maharashtra exam tracks!',
       tierLevel: 5,
+      badgeAsset: 'assets/leagues/diamond.png',
     ),
     LeagueTier(
       name: 'Champion League',
@@ -84,6 +91,7 @@ class LeagueTier {
       icon: Icons.local_fire_department_rounded,
       description: 'Legendary Hall of Fame topper!',
       tierLevel: 6,
+      badgeAsset: 'assets/leagues/champion.png',
     ),
   ];
 

@@ -10,6 +10,7 @@ import '../../../../core/state/user_state.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../providers/streak_provider.dart';
 import '../../domain/models/streak_model.dart';
+import '../../domain/models/league_tier.dart';
 import '../../../profile/presentation/screens/edit_profile_screen.dart';
 import '../../../profile/presentation/screens/settings_screen.dart';
 import '../../../skill_tree/data/repositories/sync_service.dart';
@@ -135,6 +136,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   }
 
   Widget _buildHeader(BuildContext context, UserModel user) {
+    final leagueTier = LeagueTier.fromXp(user.totalXp);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
       child: AppCard(
@@ -170,11 +173,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatColumn("-", "League", Icons.emoji_events_rounded, AppColors.waterBlue),
+                  _buildStatColumn(
+                    leagueTier.name.replaceAll(' League', ''),
+                    "League",
+                    icon: leagueTier.icon,
+                    iconColor: leagueTier.primaryColor,
+                    imageAsset: leagueTier.badgeAsset,
+                  ),
                   Container(width: 1, height: 40, color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight),
-                  _buildStatColumn("${user.streakCount}", "Streak", Icons.local_fire_department_rounded, AppColors.stepOrange),
+                  _buildStatColumn(
+                    "${user.streakCount}",
+                    "Streak",
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: AppColors.stepOrange,
+                  ),
                   Container(width: 1, height: 40, color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight),
-                  _buildStatColumn("${user.totalXp}", "Total XP", Icons.bolt_rounded, AppColors.primaryGreen),
+                  _buildStatColumn(
+                    "${user.totalXp}",
+                    "Total XP",
+                    icon: Icons.bolt_rounded,
+                    iconColor: AppColors.primaryGreen,
+                  ),
                 ],
               ),
             ),
@@ -184,28 +203,55 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     ).animate().fade().slideY(begin: 0.2);
   }
 
-  Widget _buildStatColumn(String value, String label, IconData icon, Color iconColor) {
+  Widget _buildStatColumn(
+    String value,
+    String label, {
+    required IconData icon,
+    required Color iconColor,
+    String? imageAsset,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: iconColor, size: 18),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: AppTypography.headlineMedium.copyWith(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (imageAsset != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: Image.asset(
+                      imageAsset,
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(icon, color: iconColor, size: 18),
+                    ),
+                  )
+                else ...[
+                  Icon(icon, color: iconColor, size: 18),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  value,
+                  style: AppTypography.headlineMedium.copyWith(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTypography.labelMedium.copyWith(color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
-        ),
-      ],
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTypography.labelMedium.copyWith(color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
