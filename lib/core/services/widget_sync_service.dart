@@ -27,23 +27,23 @@ class WidgetSyncService {
 
       if (isPracticedToday) {
         mascotMood = 'completed';
-        statusMessage = 'Streak safe for today! See you tomorrow! 🔥';
+        statusMessage = 'शाब्बास! आजची ड्युटी पूर्ण! 🔥';
       } else if (hour >= 21) {
         // 9 PM - Midnight: Code Red Urgent Alert
         mascotMood = 'night';
-        statusMessage = 'Protect your streak! Less than 3 hrs left!';
+        statusMessage = '🚨 शेवटची संधी! वाचवा माझी streak!';
       } else if (hour >= 18) {
         // 6 PM - 9 PM: Evening Alert
-        mascotMood = 'night';
-        statusMessage = "Don't break your streak! Quick lesson now?";
+        mascotMood = 'evening';
+        statusMessage = 'सावधान! Streak तुटणार! टेस्ट सोडवा!';
       } else if (hour >= 12) {
         // 12 PM - 6 PM: Afternoon Reminder
         mascotMood = 'afternoon';
-        statusMessage = 'Afternoon practice time! Keep the momentum.';
+        statusMessage = 'काय मग, अभ्यास झाला नाही का अजून?';
       } else {
         // 5 AM - 12 PM: Early Morning Motivation
         mascotMood = 'morning';
-        statusMessage = 'Start early! Keep your streak alive.';
+        statusMessage = 'उठा जवान! सकाळची ड्रिल पूर्ण करा!';
       }
 
       final safeStreak = streakCount > 0 ? streakCount.toString() : '0';

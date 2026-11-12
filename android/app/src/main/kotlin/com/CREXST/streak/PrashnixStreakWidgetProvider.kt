@@ -20,8 +20,8 @@ class PrashnixStreakWidgetProvider : AppWidgetProvider() {
         val streakCount = prefs.getString(KEY_STREAK, "1") ?: "1"
         val isPracticed = prefs.getBoolean(KEY_PRACTICED, false)
         val mascotMood = prefs.getString(KEY_MOOD, "morning") ?: "morning"
-        val statusMessage = prefs.getString(KEY_STATUS, "Start early! Keep your streak alive.")
-            ?: "Start early! Keep your streak alive."
+        val statusMessage = prefs.getString(KEY_STATUS, "उठा जवान! सकाळची ड्रिल पूर्ण करा!")
+            ?: "उठा जवान! सकाळची ड्रिल पूर्ण करा!"
 
         for (widgetId in appWidgetIds) {
             val views = buildRemoteViews(context, streakCount, isPracticed, mascotMood, statusMessage)
@@ -76,16 +76,18 @@ class PrashnixStreakWidgetProvider : AppWidgetProvider() {
                 val mascotRes = when {
                     isPracticed || mascotMood == "completed" -> R.drawable.ic_mascot_completed
                     mascotMood == "night" -> R.drawable.ic_mascot_night
+                    mascotMood == "evening" -> R.drawable.ic_mascot_evening
                     mascotMood == "afternoon" -> R.drawable.ic_mascot_afternoon
                     else -> R.drawable.ic_mascot_morning
                 }
                 setImageViewResource(R.id.widget_mascot_image, mascotRes)
 
-                // Button state text
+                // Marathi status label & Action button text
+                setTextViewText(R.id.widget_streak_label, "दिवस STREAK")
                 if (isPracticed) {
-                    setTextViewText(R.id.widget_action_text, "STREAK SAFE")
+                    setTextViewText(R.id.widget_action_text, "ड्युटी पूर्ण ✅")
                 } else {
-                    setTextViewText(R.id.widget_action_text, "PRACTICE NOW")
+                    setTextViewText(R.id.widget_action_text, "सराव करा ⚡")
                 }
 
                 // 1-Tap Deep Link to launch app directly into lesson
