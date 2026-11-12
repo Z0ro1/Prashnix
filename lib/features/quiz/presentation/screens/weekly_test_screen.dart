@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../../../../core/state/user_state.dart';
 import '../../../../core/models/weekly_test_model.dart';
+import '../../../profile/data/repositories/progress_repository.dart';
 import '../../../skill_tree/data/repositories/sync_service.dart';
 import '../../data/repositories/weekly_test_repository.dart';
 import '../providers/quiz_provider.dart';
@@ -26,6 +27,8 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
   bool _isReminderSet = false;
   bool _isLoadingTest = true;
   WeeklyTestModel? _activeTest;
+  bool _isTestCompleted = false;
+  int? _completedScore;
 
   final List<String> _examTypes = [
     'Police Bharti',
@@ -48,9 +51,20 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
     try {
       final repo = WeeklyTestRepository();
       final test = await repo.getActiveWeeklyTest(examType: _selectedExamType);
+      
+      bool isCompleted = false;
+      int? score;
+      if (test != null) {
+        final progressRepo = ProgressRepository();
+        isCompleted = await progressRepo.isWeeklyTestCompleted(test.id);
+        score = await progressRepo.getWeeklyTestScore(test.id);
+      }
+
       if (mounted) {
         setState(() {
           _activeTest = test;
+          _isTestCompleted = isCompleted;
+          _completedScore = score;
           _isLoadingTest = false;
         });
         _calculateTimeLeft();
@@ -129,6 +143,18 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
   }
 
   void _startTest() {
+    if (_isTestCompleted) {
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You have already completed this week\'s mock test! Next test unlocks when the countdown ends.'),
+          backgroundColor: AppColors.primaryMint,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     HapticFeedback.heavyImpact();
 
     if (_activeTest != null && _activeTest!.questions.isNotEmpty) {
@@ -147,6 +173,7 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
     ).then((_) {
       if (mounted) {
         ref.read(quizProvider.notifier).resetQuiz();
+        _loadActiveTest();
       }
     });
   }
@@ -531,35 +558,106 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
 
                     const SizedBox(height: 40),
 
-                    // Start Official Mock Test Button
-                    GestureDetector(
-                      onTap: _startTest,
-                      child: Container(
+                    // Start Official Mock Test Button OR Completed State Card
+                    if (_isTestCompleted)
+                      Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryMint,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryMint.withValues(alpha: 0.4),
-                              blurRadius: 20,
-                              offset: const Offset(0, 5),
-                            )
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark ? AppColors.primaryMint.withValues(alpha: 0.3) : const Color(0xFF86EFAC),
+                            width: 1.5,
+                          ),
+                          boxShadow: isDark ? null : AppColors.softCardShadow,
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: AppColors.primaryMint, size: 26),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'TEST COMPLETED',
+                                  style: AppTextStyles.h2.copyWith(
+                                    color: isDark ? Colors.white : AppColors.primaryGreenDark,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              _completedScore != null
+                                  ? 'Score: $_completedScore / $questionCount • You have submitted this week\'s mock test.'
+                                  : 'You have submitted this week\'s championship test.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.body.copyWith(
+                                color: isDark ? Colors.white70 : AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark ? Colors.white12 : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.lock_clock_outlined, size: 16, color: AppColors.canaryYellow),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Next test unlocks in: ${_formatDuration(_timeLeft)}',
+                                    style: AppTextStyles.label.copyWith(
+                                      color: isDark ? AppColors.canaryYellow : const Color(0xFF996B00),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        child: Center(
-                          child: Text(
-                            'START OFFICIAL 100-MOCK TEST',
-                            style: AppTextStyles.h2.copyWith(
-                              color: AppColors.deepTealNavy,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
+                      ).animate().fade().slideY(begin: 0.1)
+                    else
+                      GestureDetector(
+                        onTap: _startTest,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryMint,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryMint.withValues(alpha: 0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 5),
+                              )
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              'START OFFICIAL 100-MOCK TEST',
+                              style: AppTextStyles.h2.copyWith(
+                                color: AppColors.deepTealNavy,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ).animate().fade(delay: 700.ms).slideY(begin: 0.2, curve: Curves.easeOutBack),
+                      ).animate().fade(delay: 700.ms).slideY(begin: 0.2, curve: Curves.easeOutBack),
 
                     const SizedBox(height: 40),
                   ],

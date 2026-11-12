@@ -7,6 +7,7 @@ import '../../../../core/theme/text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../gamification/presentation/providers/heart_economy_provider.dart';
 import '../../../../core/state/user_state.dart';
+import '../../../profile/data/repositories/progress_repository.dart';
 import '../../data/repositories/cloud_sync_repository.dart';
 import '../providers/timed_exam_provider.dart';
 import 'leaderboard_screen.dart';
@@ -28,23 +29,36 @@ class _TestAnalyticsScreenState extends ConsumerState<TestAnalyticsScreen> {
   }
 
   Future<void> _processRewardsAndSync() async {
-    // 1. Reset Hearts & Give 500 XP
-    final userNotifier = ref.read(userStoreProvider.notifier);
-    userNotifier.addXp(500);
-    // Fill to 25 (if they had 0, add 25)
-    final currentHearts = ref.read(userStoreProvider).heartCount;
-    if (currentHearts < 25) {
-      ref.read(heartEconomyProvider.notifier).addHearts(25 - currentHearts);
+    final state = ref.read(timedExamProvider);
+    // Anti-Exploit Security: If no questions were answered, grant ZERO rewards!
+    if (state.answeredCount == 0) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+      return;
     }
 
-    // 2. Cloud Sync
-    final user = ref.read(userStoreProvider);
-    final syncRepo = CloudSyncRepository();
-    await syncRepo.syncProgressToCloud(
-      xp: user.totalXp,
-      streak: user.streakCount,
-      hearts: user.heartCount,
-    );
+    final repo = ProgressRepository();
+    const claimedKey = 'timed_exam_weekly_reward_claimed';
+    final alreadyClaimed = await repo.getLocalState(claimedKey) == '1';
+
+    if (!alreadyClaimed) {
+      await repo.saveLocalState(claimedKey, '1');
+
+      // 1. Reset Hearts to 5 & Give 500 XP exactly once
+      final userNotifier = ref.read(userStoreProvider.notifier);
+      userNotifier.addXp(500);
+      ref.read(heartEconomyProvider.notifier).refillFull();
+
+      // 2. Cloud Sync
+      final user = ref.read(userStoreProvider);
+      final syncRepo = CloudSyncRepository();
+      await syncRepo.syncProgressToCloud(
+        xp: user.totalXp,
+        streak: user.streakCount,
+        hearts: user.heartCount,
+      );
+    }
 
     if (mounted) {
       setState(() {

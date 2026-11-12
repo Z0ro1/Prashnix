@@ -65,7 +65,9 @@ class HeartEconomy extends _$HeartEconomy {
 
       // 1. Midnight IST Daily Reset
       // If we crossed into a new day (IST), refill hearts completely to 5 and reset ad counters.
-      if (lastRefillDate != todayIstStr) {
+      if (lastRefillDate == null) {
+        await _progressRepo.saveLocalState('last_heart_refill_date', todayIstStr);
+      } else if (lastRefillDate != todayIstStr) {
         debugPrint('[HeartEconomy] Midnight IST triggered! Resetting to 5 hearts and resetting ad limits.');
         await _progressRepo.saveLocalState('last_heart_refill_date', todayIstStr);
         await _progressRepo.saveLocalState('current_hearts', '${HeartEngineService.maxHearts}');

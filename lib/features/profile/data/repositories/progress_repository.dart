@@ -49,4 +49,31 @@ class ProgressRepository {
     }
     return result;
   }
+
+  /// Checks if a weekly test has been completed locally or synced from cloud.
+  Future<bool> isWeeklyTestCompleted(String testId) async {
+    final cleanId = testId.replaceFirst('weekly_test_', '');
+    final status = await getLocalState('weekly_test_completed_$cleanId');
+    if (status == '1') return true;
+    final nodeStatus = await getLocalState('status_weekly_test_$cleanId');
+    if (nodeStatus == '1') return true;
+    final progressStatus = await getLocalState('status_node_weekly_test_$cleanId');
+    return progressStatus == '1';
+  }
+
+  /// Marks a weekly test as completed and records the final score.
+  Future<void> markWeeklyTestCompleted(String testId, {int score = 0}) async {
+    final cleanId = testId.replaceFirst('weekly_test_', '');
+    await saveLocalState('weekly_test_completed_$cleanId', '1');
+    await saveLocalState('status_weekly_test_$cleanId', '1');
+    await saveLocalState('weekly_test_score_$cleanId', score.toString());
+    await saveLocalState('weekly_test_completed_at_$cleanId', DateTime.now().toIso8601String());
+  }
+
+  /// Retrieves the recorded score for a completed weekly test.
+  Future<int?> getWeeklyTestScore(String testId) async {
+    final cleanId = testId.replaceFirst('weekly_test_', '');
+    final scoreStr = await getLocalState('weekly_test_score_$cleanId');
+    return scoreStr != null ? int.tryParse(scoreStr) : null;
+  }
 }

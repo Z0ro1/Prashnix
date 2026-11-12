@@ -121,7 +121,7 @@ class WeeklyTestRepository {
         nextSunday = DateTime(nextSunday.year, nextSunday.month, nextSunday.day, 12, 0, 0);
 
         return WeeklyTestModel(
-          id: 'local_weekly_test',
+          id: 'local_weekly_test_${(examType ?? 'Police Bharti').replaceAll(' ', '_')}_${nextSunday.year}_${nextSunday.month}_${nextSunday.day}',
           title: 'महाराष्ट्र पोलीस भरती १००-प्रश्न साप्ताहिक चाचणी',
           examType: examType ?? 'Police Bharti',
           scheduledDate: nextSunday,

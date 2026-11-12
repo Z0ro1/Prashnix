@@ -11,6 +11,7 @@ import '../../../../core/config/supabase_config.dart';
 import '../../data/repositories/weekly_test_repository.dart';
 import '../../../gamification/presentation/providers/heart_economy_provider.dart';
 import '../../../gamification/presentation/providers/streak_provider.dart';
+import '../../../skill_tree/data/repositories/sync_service.dart';
 
 part 'quiz_provider.g.dart';
 
@@ -143,6 +144,7 @@ class QuizNotifier extends _$QuizNotifier {
         final weeklyTest = await weeklyRepo.getActiveWeeklyTest(examType: examType);
         if (weeklyTest != null && weeklyTest.questions.isNotEmpty) {
           newQuestions = weeklyTest.questions;
+          nodeId = 'weekly_test_${weeklyTest.id}';
         } else {
           final ProgressRepository progressRepo = ProgressRepository();
           final currentLevelStr = await progressRepo.getLocalState('highest_unlocked_level') ?? '0';
@@ -156,6 +158,7 @@ class QuizNotifier extends _$QuizNotifier {
       state = state.copyWith(
         questions: newQuestions,
         isLoading: false,
+        nodeId: nodeId,
         currentIndex: 0,
         clearSelectedOption: true,
         status: QuizStatus.unanswered,
@@ -248,6 +251,9 @@ class QuizNotifier extends _$QuizNotifier {
     // Double-tap race condition guard
     if (state.status == QuizStatus.finished || _isCompleting) return;
 
+    // Safety: ensure questions exist and index is valid
+    if (state.questions.isEmpty) return;
+
     if (state.currentIndex < state.questions.length - 1) {
       state = state.copyWith(
         currentIndex: state.currentIndex + 1,
@@ -260,9 +266,8 @@ class QuizNotifier extends _$QuizNotifier {
 
       int completionBonus = 0;
       if (isWeeklyTest) {
-        // 100-Question Championship Test completion reward (+1000 XP & Heart Refill)
+        // Weekly test rewards (+1000 XP & Heart Refill) are guarded inside _completeLessonAndSync
         completionBonus = 1000;
-        ref.read(heartEconomyProvider.notifier).refillFull();
       } else if (state.mistakesCount == 0) {
         // Perfect Lesson bonus (0 mistakes on first try): +100 XP
         if (ref.read(settingsProvider).hapticsEnabled) {
@@ -280,19 +285,21 @@ class QuizNotifier extends _$QuizNotifier {
       final totalXpForLesson = state.baseXpEarned + completionBonus;
       state = state.copyWith(baseXpEarned: totalXpForLesson);
       
-      // Update User Store XP exactly once
-      ref.read(userStoreProvider.notifier).addXp(totalXpForLesson);
+      // Update User Store XP exactly once for normal lessons
+      if (!isWeeklyTest) {
+        ref.read(userStoreProvider.notifier).addXp(totalXpForLesson);
+      }
       
       // Update streak and record daily activity
       ref.read(streakProvider.notifier).recordDailyActivity(xpEarned: totalXpForLesson);
       
-      // Tell SkillTreeNotifier to progress the fractional lesson
-      if (state.nodeId != null) {
+      // Tell SkillTreeNotifier to progress the fractional lesson (regular lessons only)
+      if (state.nodeId != null && !isWeeklyTest) {
         ref.read(skillTreeProvider.notifier).completeLesson(state.nodeId!);
       }
       
-      // Mark lesson complete and trigger cloud sync
-      _completeLessonAndSync();
+      // Mark lesson / weekly test complete and trigger cloud sync
+      _completeLessonAndSync(isWeeklyTest: isWeeklyTest);
 
       state = state.copyWith(
         status: QuizStatus.finished,
@@ -301,9 +308,27 @@ class QuizNotifier extends _$QuizNotifier {
     }
   }
 
-  Future<void> _completeLessonAndSync() async {
+  Future<void> _completeLessonAndSync({bool isWeeklyTest = false}) async {
     try {
       final ProgressRepository progressRepo = ProgressRepository();
+
+      if (isWeeklyTest && state.nodeId != null) {
+        final testId = state.nodeId!.replaceFirst('weekly_test_', '');
+        final claimedKey = 'weekly_test_reward_claimed_$testId';
+        final alreadyClaimed = await progressRepo.getLocalState(claimedKey) == '1';
+
+        if (!alreadyClaimed) {
+          // Lock the reward claim immediately to prevent race conditions
+          await progressRepo.saveLocalState(claimedKey, '1');
+          await progressRepo.markWeeklyTestCompleted(testId, score: state.correctAnswers);
+          await SyncService().pushNodeProgress('weekly_test_$testId', 1, true);
+
+          // Award +1000 XP and refill hearts to full ONLY ONCE on legitimate test completion
+          ref.read(userStoreProvider.notifier).addXp(1000);
+          ref.read(heartEconomyProvider.notifier).refillFull();
+        }
+        return;
+      }
       
       // Get current level
       final currentLevelStr = await progressRepo.getLocalState('highest_unlocked_level') ?? '0';

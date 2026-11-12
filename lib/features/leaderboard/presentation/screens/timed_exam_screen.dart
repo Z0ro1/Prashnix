@@ -26,6 +26,38 @@ class _TimedExamScreenState extends ConsumerState<TimedExamScreen> {
     });
   }
 
+  void _confirmExit() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.8),
+      builder: (dialogContext) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1E222B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          title: Text('Quit Exam?', style: AppTextStyles.h2.copyWith(color: Colors.white)),
+          content: Text("Are you sure you want to quit? Your progress will not be saved and no rewards will be awarded.", style: AppTextStyles.body.copyWith(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('CANCEL', style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pop();
+              },
+              child: const Text('QUIT', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _confirmSubmit() {
     showDialog(
       context: context,
@@ -206,7 +238,7 @@ class _TimedExamScreenState extends ConsumerState<TimedExamScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                            onPressed: _confirmSubmit, // Same action as quit/submit
+                            onPressed: _confirmExit,
                           ),
                           const Spacer(),
                           // Timer
