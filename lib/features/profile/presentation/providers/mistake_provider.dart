@@ -79,9 +79,18 @@ class MistakeNotifier extends _$MistakeNotifier {
       List<QuestionModel> questions = await _questionRepo.getQuestionsByIds(qIds);
 
       final List<MistakeItemModel> items = [];
+      final seenIds = <String>{};
+      final seenTexts = <String>{};
+
       for (var m in dbMistakes) {
+        if (seenIds.contains(m.questionId)) continue;
         try {
           final q = questions.firstWhere((element) => element.id == m.questionId);
+          final textKey = q.questionText.trim().toLowerCase();
+          if (seenTexts.contains(textKey)) continue;
+
+          seenIds.add(m.questionId);
+          seenTexts.add(textKey);
           items.add(MistakeItemModel(mistake: m, question: q));
         } catch (e) {
           // Skip this mistake if the actual question data doesn't exist in the database yet.

@@ -71,12 +71,13 @@ class MistakeRepository {
   Future<List<MistakeModel>> getUnclearedMistakes() async {
     final db = await _dbService.database;
 
-    final List<Map<String, dynamic>> maps = await db.query(
-      DbConstants.tableMistakes,
-      where: 'is_cleared = ?',
-      whereArgs: [0],
-      orderBy: 'last_failed_at DESC',
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT id, question_id, user_answer, MAX(mistake_count) as mistake_count, is_cleared, MAX(last_failed_at) as last_failed_at
+      FROM ${DbConstants.tableMistakes}
+      WHERE is_cleared = 0
+      GROUP BY question_id
+      ORDER BY last_failed_at DESC
+    ''');
 
     return maps.map((map) => MistakeModel.fromMap(map)).toList();
   }

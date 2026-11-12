@@ -52,7 +52,24 @@ class RetryState {
 class RetrySprintNotifier extends _$RetrySprintNotifier {
   @override
   RetryState build(List<QuestionModel> initialQuestions) {
-    return RetryState(questions: initialQuestions);
+    // Deduplicate initial questions by both ID and questionText so every question is unique
+    final uniqueQuestions = <QuestionModel>[];
+    final seenIds = <String>{};
+    final seenTexts = <String>{};
+
+    for (final q in initialQuestions) {
+      final idKey = q.id ?? '';
+      final textKey = q.questionText.trim().toLowerCase();
+
+      if (idKey.isNotEmpty && seenIds.contains(idKey)) continue;
+      if (textKey.isNotEmpty && seenTexts.contains(textKey)) continue;
+
+      if (idKey.isNotEmpty) seenIds.add(idKey);
+      if (textKey.isNotEmpty) seenTexts.add(textKey);
+      uniqueQuestions.add(q);
+    }
+
+    return RetryState(questions: uniqueQuestions);
   }
 
   void selectOption(String optionIndex) {
@@ -67,7 +84,7 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
     }
   }
 
-  void checkAnswer() async {
+  void checkAnswer() {
     if (state.status != RetryStatus.selected) return;
 
     final question = state.currentQuestion;
@@ -82,7 +99,7 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
       // Clear mistake and award +1 Heart immediately
       if (question.id != null) {
         final MistakeRepository repo = MistakeRepository();
-        await repo.markMistakeCleared(question.id!);
+        repo.markMistakeCleared(question.id!);
         ref.read(heartEconomyProvider.notifier).addHearts(1);
       }
 
@@ -97,15 +114,13 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
       // User failed again. Increment mistake_count in repo. No heart deduction.
       if (question.id != null) {
         final MistakeRepository repo = MistakeRepository();
-        await repo.logMistake(question.id!, state.selectedOption!);
+        repo.logMistake(question.id!, state.selectedOption!);
       }
 
-      // We append it to the end so they HAVE to clear it, just like Phase 7 modification!
-      final updatedQuestions = List<QuestionModel>.from(state.questions)..add(question);
-
+      // Do NOT re-append to the end of the sprint session to avoid repeated questions.
+      // The mistake remains uncleared in the Mistake Bank for future review.
       state = state.copyWith(
         status: RetryStatus.checkedIncorrect,
-        questions: updatedQuestions,
       );
     }
   }
@@ -126,8 +141,8 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
         ref.read(userStoreProvider.notifier).addXp(earnedXp);
       }
 
-      // Refresh the mistake bank
-      ref.read(mistakeProvider.notifier).build();
+      // Refresh the mistake bank properly
+      ref.read(mistakeProvider.notifier).loadMistakes();
       
       state = state.copyWith(status: RetryStatus.finished);
     }

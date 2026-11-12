@@ -29,13 +29,30 @@ class MistakeReviewScreen extends ConsumerWidget {
     final sortedPool = List<MistakeItemModel>.from(state.filteredMistakes)
       ..sort((a, b) => b.mistake.mistakeCount.compareTo(a.mistake.mistakeCount));
 
-    final sprintQuestions = (customQuestions != null)
-        ? customQuestions
-        : sortedPool.map((m) => m.question).take(count).toList();
+    final rawQuestions = customQuestions ?? sortedPool.map((m) => m.question).toList();
+    final uniqueSprintQuestions = <QuestionModel>[];
+    final seenIds = <String>{};
+    final seenTexts = <String>{};
+
+    for (final q in rawQuestions) {
+      final idKey = q.id ?? '';
+      final textKey = q.questionText.trim().toLowerCase();
+
+      if (idKey.isNotEmpty && seenIds.contains(idKey)) continue;
+      if (textKey.isNotEmpty && seenTexts.contains(textKey)) continue;
+
+      if (idKey.isNotEmpty) seenIds.add(idKey);
+      if (textKey.isNotEmpty) seenTexts.add(textKey);
+      uniqueSprintQuestions.add(q);
+
+      if (uniqueSprintQuestions.length >= count) break;
+    }
+
+    if (uniqueSprintQuestions.isEmpty) return;
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => RetrySprintScreen(initialQuestions: sprintQuestions),
+        builder: (context) => RetrySprintScreen(initialQuestions: uniqueSprintQuestions),
       ),
     );
   }

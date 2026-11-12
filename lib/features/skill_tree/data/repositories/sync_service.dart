@@ -71,18 +71,38 @@ class SyncService {
       final db = await DatabaseService().database;
       for (final row in serverMistakes) {
         final qId = row['question_id'] as String;
-        await db.insert(
+        final existing = await db.query(
           DbConstants.tableMistakes,
-          {
-            'id': row['id'],
-            'question_id': qId,
-            'user_answer': row['user_answer'] ?? '',
-            'mistake_count': row['mistake_count'] ?? 1,
-            'is_cleared': (row['is_cleared'] == true) ? 1 : 0,
-            'last_failed_at': row['last_failed_at'] ?? DateTime.now().toIso8601String(),
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
+          where: 'question_id = ?',
+          whereArgs: [qId],
+          limit: 1,
         );
+        if (existing.isNotEmpty) {
+          await db.update(
+            DbConstants.tableMistakes,
+            {
+              'user_answer': row['user_answer'] ?? '',
+              'mistake_count': row['mistake_count'] ?? 1,
+              'is_cleared': (row['is_cleared'] == true) ? 1 : 0,
+              'last_failed_at': row['last_failed_at'] ?? DateTime.now().toIso8601String(),
+            },
+            where: 'question_id = ?',
+            whereArgs: [qId],
+          );
+        } else {
+          await db.insert(
+            DbConstants.tableMistakes,
+            {
+              'id': row['id'],
+              'question_id': qId,
+              'user_answer': row['user_answer'] ?? '',
+              'mistake_count': row['mistake_count'] ?? 1,
+              'is_cleared': (row['is_cleared'] == true) ? 1 : 0,
+              'last_failed_at': row['last_failed_at'] ?? DateTime.now().toIso8601String(),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
       }
 
       // Pull saved questions
