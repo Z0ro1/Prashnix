@@ -495,31 +495,39 @@ class _LeagueScreenState extends ConsumerState<LeagueScreen> with SingleTickerPr
 
   Widget _buildStatColumn(String value, String label, IconData icon, Color iconColor, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: iconColor, size: 18),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: AppTypography.headlineMedium.copyWith(
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                fontWeight: FontWeight.bold,
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: iconColor, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  value,
+                  style: AppTypography.headlineSmall.copyWith(
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTypography.labelSmall.copyWith(
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTypography.labelMedium.copyWith(
-            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
