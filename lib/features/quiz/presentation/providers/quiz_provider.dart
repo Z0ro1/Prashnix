@@ -89,17 +89,22 @@ class QuizNotifier extends _$QuizNotifier {
   @override
   QuizState build() {
     _isCompleting = false;
-    return QuizState(questions: [], isLoading: true);
+    return QuizState(questions: const [], isLoading: true);
+  }
+
+  void resetQuiz() {
+    _isCompleting = false;
+    state = QuizState(questions: const [], isLoading: false);
   }
 
   void setQuestionsDirectly(List<QuestionModel> questions, {String nodeId = 'weekly_test'}) {
     _isCompleting = false;
-    state = state.copyWith(
+    state = QuizState(
       questions: questions,
       isLoading: false,
       nodeId: nodeId,
       currentIndex: 0,
-      clearSelectedOption: true,
+      selectedOption: null,
       status: QuizStatus.unanswered,
       correctAnswers: 0,
       baseXpEarned: 0,
@@ -112,7 +117,20 @@ class QuizNotifier extends _$QuizNotifier {
 
   Future<void> loadQuestionsForNode(String nodeId, {int lessonIndex = 0}) async {
     _isCompleting = false;
-    state = state.copyWith(isLoading: true, nodeId: nodeId);
+    state = QuizState(
+      questions: const [],
+      currentIndex: 0,
+      selectedOption: null,
+      status: QuizStatus.unanswered,
+      correctAnswers: 0,
+      baseXpEarned: 0,
+      streakIncrement: 0,
+      isLoading: true,
+      nodeId: nodeId,
+      initialQuestionCount: 0,
+      mistakesCount: 0,
+      awardedQuestionKeys: const {},
+    );
     try {
       final repo = QuestionRepository();
       List<QuestionModel> newQuestions = [];

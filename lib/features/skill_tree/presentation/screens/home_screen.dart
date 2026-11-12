@@ -744,6 +744,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       MaterialPageRoute(builder: (context) => const QuizScreen()),
                     ).then((_) {
                       _isLaunchingLesson = false;
+                      ref.read(quizProvider.notifier).resetQuiz();
                     });
                   } else {
                     _isLaunchingLesson = false;
@@ -876,6 +877,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       MaterialPageRoute(builder: (context) => const QuizScreen()),
                     ).then((_) {
                       _isLaunchingLesson = false;
+                      ref.read(quizProvider.notifier).resetQuiz();
                     });
                   } else {
                     _isLaunchingLesson = false;

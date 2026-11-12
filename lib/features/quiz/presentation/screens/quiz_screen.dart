@@ -21,7 +21,7 @@ import 'quiz_summary_screen.dart';
 class QuizScreen extends ConsumerWidget {
   const QuizScreen({super.key});
 
-  void _showExitDialog(BuildContext parentContext) {
+  void _showExitDialog(BuildContext parentContext, WidgetRef ref) {
     showDialog<bool>(
       context: parentContext,
       builder: (dialogContext) => AlertDialog(
@@ -43,6 +43,7 @@ class QuizScreen extends ConsumerWidget {
         AdMobService().showInterstitialAd(
           onAdClosed: () {
             if (!parentContext.mounted) return;
+            ref.read(quizProvider.notifier).resetQuiz();
             if (Navigator.of(parentContext).canPop()) {
               Navigator.of(parentContext).pop();
             } else {
@@ -67,11 +68,12 @@ class QuizScreen extends ConsumerWidget {
 
     // Redirect if finished or out of hearts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (state.status == QuizStatus.finished) {
+      if (!context.mounted) return;
+      if (!state.isLoading && state.status == QuizStatus.finished && state.questions.isNotEmpty) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const QuizSummaryScreen()),
         );
-      } else if (state.status == QuizStatus.outOfHearts) {
+      } else if (!state.isLoading && state.status == QuizStatus.outOfHearts) {
         HeartRefillModalSheet.show(context);
         // And probably exit quiz or pause
       }
@@ -137,25 +139,32 @@ class QuizScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      backgroundColor: bgColor, 
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Navigation Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close, color: mutedColor),
-                    onPressed: () {
-                      if (ref.read(settingsProvider).hapticsEnabled) {
-                        HapticFeedback.lightImpact();
-                      }
-                      _showExitDialog(context);
-                    },
-                  ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _showExitDialog(context, ref);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: bgColor, 
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header Navigation Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.close, color: mutedColor),
+                      onPressed: () {
+                        if (ref.read(settingsProvider).hapticsEnabled) {
+                          HapticFeedback.lightImpact();
+                        }
+                        _showExitDialog(context, ref);
+                      },
+                    ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: QuizProgressBar(
@@ -400,8 +409,9 @@ class QuizScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _getCorrectOptionText(QuestionModel q) {
     if (q.correctOption == 'A') return q.optionA;

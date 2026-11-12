@@ -144,7 +144,11 @@ class _WeeklyTestScreenState extends ConsumerState<WeeklyTestScreen> {
 
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const QuizScreen()),
-    );
+    ).then((_) {
+      if (mounted) {
+        ref.read(quizProvider.notifier).resetQuiz();
+      }
+    });
   }
 
   @override

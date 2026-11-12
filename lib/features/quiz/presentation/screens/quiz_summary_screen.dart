@@ -26,9 +26,16 @@ class QuizSummaryScreen extends ConsumerWidget {
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
     final mutedTextColor = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          ref.read(quizProvider.notifier).resetQuiz();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: bgColor,
+        body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -129,6 +136,7 @@ class QuizSummaryScreen extends ConsumerWidget {
                   AdMobService().showInterstitialAd(
                     onAdClosed: () {
                       if (context.mounted) {
+                        ref.read(quizProvider.notifier).resetQuiz();
                         Navigator.of(context).pop(); // Pop back to roadmap
                       }
                     },
@@ -139,6 +147,7 @@ class QuizSummaryScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
