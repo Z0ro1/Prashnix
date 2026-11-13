@@ -16,6 +16,7 @@ import '../../../profile/presentation/screens/settings_screen.dart';
 import '../../../skill_tree/data/repositories/sync_service.dart';
 import '../../../../core/models/question_model.dart';
 import '../../../profile/presentation/providers/saved_questions_provider.dart';
+import '../../../profile/presentation/widgets/subject_heatmap_widget.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -113,7 +114,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       tabs: const [
                         Tab(icon: Icon(Icons.local_fire_department_rounded, size: 28)),
                         Tab(icon: Icon(Icons.bookmark_rounded, size: 28)),
-                        Tab(icon: Icon(Icons.lock_rounded, size: 28)),
+                        Tab(icon: Icon(Icons.insights_rounded, size: 28)),
                       ],
                     ),
                   ),
@@ -126,7 +127,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               children: [
                 _buildStreakCalendarTab(context).animate().fade().slideX(begin: 0.1),
                 _buildBookmarksTab(context).animate().fade().slideX(begin: 0.1),
-                _buildLockedFeatureTab(context).animate().fade().slideX(begin: 0.1),
+                const SubjectHeatmapWidget().animate().fade().slideX(begin: 0.1),
               ],
             ),
           ),
@@ -228,7 +229,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       width: 20,
                       height: 20,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(icon, color: iconColor, size: 18),
+                      errorBuilder: (context, error, stackTrace) => Icon(icon, color: iconColor, size: 18),
                     ),
                   )
                 else ...[
@@ -1148,38 +1149,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             if (isCorrect)
               const Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 18),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLockedFeatureTab(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: AppCard(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.lock_rounded, size: 80, color: isDark ? AppColors.borderDark : AppColors.borderLight)
-                  .animate(onPlay: (c) => c.repeat()).shimmer(duration: 2.seconds),
-              const SizedBox(height: 24),
-              Text(
-                "Coming Soon!",
-                style: AppTypography.headlineMedium.copyWith(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "This feature will unlock in the next version!",
-                style: AppTypography.bodyMedium.copyWith(color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
         ),
       ),
     );

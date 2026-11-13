@@ -12,6 +12,7 @@ import '../../data/repositories/weekly_test_repository.dart';
 import '../../../gamification/presentation/providers/heart_economy_provider.dart';
 import '../../../gamification/presentation/providers/streak_provider.dart';
 import '../../../skill_tree/data/repositories/sync_service.dart';
+import '../../../profile/data/repositories/analytics_repository.dart';
 
 part 'quiz_provider.g.dart';
 
@@ -205,6 +206,16 @@ class QuizNotifier extends _$QuizNotifier {
     if (question == null) return;
 
     final isCorrect = state.selectedOption == question.correctOption;
+
+    // Log attempt for Subject & Topic Weakness Heatmap
+    if (question.id != null) {
+      AnalyticsRepository().logAttempt(
+        questionId: question.id!,
+        subjectTag: question.subjectTag,
+        subtopicTag: question.subtopicTag,
+        isCorrect: isCorrect,
+      );
+    }
 
     if (isCorrect) {
       if (ref.read(settingsProvider).hapticsEnabled) {

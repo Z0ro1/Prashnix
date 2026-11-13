@@ -6,6 +6,7 @@ import '../../../gamification/presentation/providers/heart_economy_provider.dart
 import '../../../quiz/data/repositories/mistake_repository.dart';
 import 'mistake_provider.dart';
 import '../../../../core/state/user_state.dart';
+import '../../data/repositories/analytics_repository.dart';
 
 part 'retry_sprint_provider.g.dart';
 
@@ -91,6 +92,16 @@ class RetrySprintNotifier extends _$RetrySprintNotifier {
     if (question == null) return;
 
     final isCorrect = state.selectedOption == question.correctOption;
+
+    // Log attempt for Subject & Topic Weakness Heatmap
+    if (question.id != null) {
+      AnalyticsRepository().logAttempt(
+        questionId: question.id!,
+        subjectTag: question.subjectTag,
+        subtopicTag: question.subtopicTag,
+        isCorrect: isCorrect,
+      );
+    }
 
     if (isCorrect) {
       if (ref.read(settingsProvider).hapticsEnabled) {

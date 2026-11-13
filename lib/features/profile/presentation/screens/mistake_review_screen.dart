@@ -12,12 +12,21 @@ import '../../../skill_tree/presentation/theme/prashnix_colors.dart';
 import '../providers/mistake_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/mistake_card.dart';
+import '../widgets/subject_heatmap_widget.dart';
+import '../providers/subject_analytics_provider.dart';
 import 'retry_sprint_screen.dart';
 
-class MistakeReviewScreen extends ConsumerWidget {
+class MistakeReviewScreen extends ConsumerStatefulWidget {
   const MistakeReviewScreen({super.key});
 
-  void _startSprint(BuildContext context, WidgetRef ref, {List<QuestionModel>? customQuestions, int count = 5}) {
+  @override
+  ConsumerState<MistakeReviewScreen> createState() => _MistakeReviewScreenState();
+}
+
+class _MistakeReviewScreenState extends ConsumerState<MistakeReviewScreen> {
+  int _selectedTab = 0; // 0: कच्चे विषय (Heatmap), 1: सर्व चुका (Mistakes)
+
+  void _startSprint({List<QuestionModel>? customQuestions, int count = 5}) {
     if (ref.read(settingsProvider).hapticsEnabled) {
       HapticFeedback.mediumImpact();
     }
@@ -54,11 +63,13 @@ class MistakeReviewScreen extends ConsumerWidget {
       MaterialPageRoute(
         builder: (context) => RetrySprintScreen(initialQuestions: uniqueSprintQuestions),
       ),
-    );
+    ).then((_) {
+      ref.read(subjectAnalyticsProvider.notifier).refresh();
+    });
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final state = ref.watch(mistakeProvider);
     final notifier = ref.read(mistakeProvider.notifier);
     final userState = ref.watch(userStoreProvider);
@@ -81,31 +92,36 @@ class MistakeReviewScreen extends ConsumerWidget {
               height: 38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: PrashnixColors.red.withValues(alpha: 0.12),
+                color: (_selectedTab == 0 ? PrashnixColors.green : PrashnixColors.red).withValues(alpha: 0.12),
               ),
-              child: const Icon(Icons.replay_rounded, color: PrashnixColors.red, size: 22),
+              child: Icon(
+                _selectedTab == 0 ? Icons.analytics_rounded : Icons.replay_rounded,
+                color: _selectedTab == 0 ? PrashnixColors.green : PrashnixColors.red,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Mistake Bank',
+                  _selectedTab == 0 ? 'कच्चे विषय Heatmap' : 'Mistake Bank',
                   style: AppTextStyles.h2.copyWith(
                     color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                if (!state.isLoading)
-                  Text(
-                    '${state.mistakes.length} mistakes to master',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textMutedDark : AppColors.textSecondary,
-                    ),
+                Text(
+                  _selectedTab == 0
+                      ? 'विषयनिहाय अचूकता व पकड'
+                      : (!state.isLoading ? '${state.mistakes.length} चुका दुरुस्त करा' : 'डेटा लोड होत आहे...'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.textMutedDark : AppColors.textSecondary,
                   ),
+                ),
               ],
             ),
           ],
@@ -139,20 +155,72 @@ class MistakeReviewScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            if (ref.read(settingsProvider).hapticsEnabled) {
-              HapticFeedback.mediumImpact();
-            }
-            await Future.wait([
-              ref.read(userStoreProvider.notifier).refreshProfile(),
-              SyncService().pullProgress(),
-            ]);
-            await notifier.loadMistakes();
-          },
-          color: PrashnixColors.green,
-          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          displacement: 40,
+        child: Column(
+          children: [
+            // Segmented Switcher Pill
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildSegmentButton(
+                      index: 0,
+                      label: 'कच्चे विषय (Heatmap)',
+                      icon: Icons.analytics_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _buildSegmentButton(
+                      index: 1,
+                      label: 'सर्व चुका (${state.mistakes.length})',
+                      icon: Icons.replay_rounded,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tab View Body
+            Expanded(
+              child: _selectedTab == 0
+                  ? RefreshIndicator(
+                      onRefresh: () async {
+                        if (ref.read(settingsProvider).hapticsEnabled) {
+                          HapticFeedback.mediumImpact();
+                        }
+                        await Future.wait([
+                          ref.read(userStoreProvider.notifier).refreshProfile(),
+                          SyncService().pullProgress(),
+                        ]);
+                        await ref.read(subjectAnalyticsProvider.notifier).refresh();
+                      },
+                      color: PrashnixColors.green,
+                      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                      child: const SubjectHeatmapWidget(),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        if (ref.read(settingsProvider).hapticsEnabled) {
+                          HapticFeedback.mediumImpact();
+                        }
+                        await Future.wait([
+                          ref.read(userStoreProvider.notifier).refreshProfile(),
+                          SyncService().pullProgress(),
+                        ]);
+                        await notifier.loadMistakes();
+                      },
+                      color: PrashnixColors.green,
+                      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                      displacement: 40,
           child: state.isLoading
               ? const Center(child: CircularProgressIndicator(color: PrashnixColors.green))
               : Stack(
@@ -329,12 +397,75 @@ class MistakeReviewScreen extends ConsumerWidget {
                           child: _Prashnix3DButton(
                             text: 'QUICK SPRINT ($sprintCount MISTAKES) • +1 ❤️',
                             icon: Icons.bolt_rounded,
-                            onTap: () => _startSprint(context, ref, count: 5),
+                            onTap: () => _startSprint(count: 5),
                           ),
                         ),
                       ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegmentButton({
+    required int index,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    final isSelected = _selectedTab == index;
+    return GestureDetector(
+      onTap: () {
+        if (ref.read(settingsProvider).hapticsEnabled) {
+          HapticFeedback.selectionClick();
+        }
+        setState(() => _selectedTab = index);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? PrashnixColors.green.withValues(alpha: 0.25) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected && !isDark
+              ? Border.all(color: AppColors.borderLight)
+              : null,
+          boxShadow: isSelected && !isDark
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? PrashnixColors.green
+                  : (isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
+            ),
+            const SizedBox(width: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected
+                      ? (isDark ? Colors.white : const Color(0xFF1F2937))
+                      : (isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

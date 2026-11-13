@@ -54,10 +54,12 @@ class DatabaseService {
     await db.execute(DbConstants.createMistakesTable);
     await db.execute(DbConstants.createProgressTable);
     await db.execute(DbConstants.createSavedQuestionsTable);
+    await db.execute(DbConstants.createQuestionAttemptsTable);
 
     // Apply indexes
     await db.execute(DbConstants.indexQuestionsSubject);
     await db.execute(DbConstants.indexMistakesCleared);
+    await db.execute(DbConstants.indexAttemptsSubjectAccuracy);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -127,6 +129,27 @@ class DatabaseService {
         await db.execute('ALTER TABLE ${DbConstants.tableQuestions} ADD COLUMN display_id TEXT');
       } catch (_) {}
       await db.execute('DELETE FROM ${DbConstants.tableQuestions}');
+    }
+    if (oldVersion < 8) {
+      // Version 8 adds question_attempts table for Subject & Topic Weakness Heatmap
+      await db.execute(DbConstants.createQuestionAttemptsTable);
+      await db.execute(DbConstants.indexAttemptsSubjectAccuracy);
+
+      // Seed initial failed attempts from existing user_mistakes joined with questions
+      try {
+        await db.execute('''
+          INSERT INTO ${DbConstants.tableQuestionAttempts} 
+          (question_id, subject_tag, subtopic_tag, is_correct, attempted_at)
+          SELECT 
+            m.question_id, 
+            q.subject_tag, 
+            q.subtopic_tag, 
+            0, 
+            m.last_failed_at
+          FROM ${DbConstants.tableMistakes} m
+          JOIN ${DbConstants.tableQuestions} q ON m.question_id = q.id
+        ''');
+      } catch (_) {}
     }
   }
 }

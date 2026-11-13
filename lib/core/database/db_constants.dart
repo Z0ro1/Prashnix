@@ -2,7 +2,7 @@ class DbConstants {
   DbConstants._();
 
   static const String databaseName = 'spardha_questions.db';
-  static const int databaseVersion = 7;
+  static const int databaseVersion = 8;
 
   // Table Names
   static const String tableQuestions = 'questions';
@@ -10,6 +10,7 @@ class DbConstants {
   static const String tableMistakes = 'user_mistakes';
   static const String tableProgress = 'offline_user_progress';
   static const String tableSavedQuestions = 'saved_questions';
+  static const String tableQuestionAttempts = 'question_attempts';
 
   // Schema Definitions
   static const String createQuestionsTable = '''
@@ -68,6 +69,17 @@ class DbConstants {
     )
   ''';
 
+  static const String createQuestionAttemptsTable = '''
+    CREATE TABLE IF NOT EXISTS $tableQuestionAttempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question_id TEXT NOT NULL,
+      subject_tag TEXT NOT NULL,
+      subtopic_tag TEXT,
+      is_correct INTEGER NOT NULL,
+      attempted_at TEXT NOT NULL
+    )
+  ''';
+
   // Index Definitions
   static const String indexQuestionsSubject = '''
     CREATE INDEX IF NOT EXISTS idx_questions_subject ON $tableQuestions(subject_tag)
@@ -75,5 +87,10 @@ class DbConstants {
 
   static const String indexMistakesCleared = '''
     CREATE INDEX IF NOT EXISTS idx_mistakes_cleared ON $tableMistakes(is_cleared)
+  ''';
+
+  static const String indexAttemptsSubjectAccuracy = '''
+    CREATE INDEX IF NOT EXISTS idx_attempts_subject_accuracy 
+    ON $tableQuestionAttempts(subject_tag, is_correct)
   ''';
 }
