@@ -40,7 +40,7 @@ class TimedExamState {
   int get correctCount {
     int count = 0;
     for (int i = 0; i < questions.length; i++) {
-      if (answers[i] == questions[i].correctOption) {
+      if (questions[i].isAnswerCorrect(answers[i])) {
         count++;
       }
     }

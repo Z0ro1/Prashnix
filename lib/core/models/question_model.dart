@@ -70,21 +70,129 @@ class QuestionModel {
     return raw;
   }
 
+  /// Returns whether a given candidate choice is correct, supporting:
+  /// - Letter choice ("A", "B", "C", "D")
+  /// - Lowercase ("a", "b", "c", "d")
+  /// - Full option text (e.g. "मुंबई", "4", "27")
+  /// - Whitespace-trimmed comparisons
+  bool isAnswerCorrect(String? candidateAnswer) {
+    if (candidateAnswer == null) return false;
+    final trimmed = candidateAnswer.trim();
+    if (trimmed.isEmpty) return false;
+
+    final upper = trimmed.toUpperCase();
+    final cleanCorrect = correctOption.trim().toUpperCase();
+
+    // 1. Direct letter match (A == A, B == B, etc.)
+    if (upper == cleanCorrect) return true;
+
+    // 2. Exact match against correct option text
+    final correctText = correctOptionText.trim();
+    if (correctText.isNotEmpty) {
+      if (trimmed == correctText) return true;
+      if (trimmed.toLowerCase() == correctText.toLowerCase()) return true;
+    }
+
+    return false;
+  }
+
+  /// Returns the text corresponding to the correct option.
+  String get correctOptionText {
+    final clean = correctOption.trim().toUpperCase();
+    switch (clean) {
+      case 'A': return optionA;
+      case 'B': return optionB;
+      case 'C': return optionC;
+      case 'D': return optionD;
+      default: return optionA;
+    }
+  }
+
+  /// Bulletproof resolver that converts any raw answer representation (option text, numeric value,
+  /// letter label, or Marathi indicator) into a canonical 'A', 'B', 'C', or 'D'.
+  static String resolveCorrectOption({
+    required dynamic rawAnswer,
+    required String optA,
+    required String optB,
+    required String optC,
+    required String optD,
+  }) {
+    if (rawAnswer == null) return 'A';
+    final ans = rawAnswer.toString().trim();
+    if (ans.isEmpty) return 'A';
+
+    final a = optA.trim();
+    final b = optB.trim();
+    final c = optC.trim();
+    final d = optD.trim();
+
+    // 1. Exact match against option text (Highest priority: protects numbers like "3", "4", "2")
+    if (ans == a && a.isNotEmpty) return 'A';
+    if (ans == b && b.isNotEmpty) return 'B';
+    if (ans == c && c.isNotEmpty) return 'C';
+    if (ans == d && d.isNotEmpty) return 'D';
+
+    // 2. Case-insensitive & whitespace-trimmed match
+    final lowerAns = ans.toLowerCase();
+    if (lowerAns == a.toLowerCase() && a.isNotEmpty) return 'A';
+    if (lowerAns == b.toLowerCase() && b.isNotEmpty) return 'B';
+    if (lowerAns == c.toLowerCase() && c.isNotEmpty) return 'C';
+    if (lowerAns == d.toLowerCase() && d.isNotEmpty) return 'D';
+
+    // 3. Normalized letter indicators: A, B, C, D (or Marathi options पर्याय अ, पर्याय ब, पर्याय क, पर्याय ड, or (A), [B])
+    final clean = ans.replaceAll(RegExp(r'^[(\[\{]|[)\]\}\.:]$'), '').trim().toUpperCase();
+    if (clean == 'A' || clean == 'OPTION A' || clean == 'पर्याय अ' || clean == 'अ') return 'A';
+    if (clean == 'B' || clean == 'OPTION B' || clean == 'पर्याय ब' || clean == 'ब') return 'B';
+    if (clean == 'C' || clean == 'OPTION C' || clean == 'पर्याय क' || clean == 'क') return 'C';
+    if (clean == 'D' || clean == 'OPTION D' || clean == 'पर्याय ड' || clean == 'ड') return 'D';
+
+    // 4. Numeric option index: 1, 2, 3, 4 (or Marathi numerals १, २, ३, ४)
+    // ONLY check index if none of the options matched the number in steps 1 & 2!
+    if (clean == '1' || clean == 'OPTION 1' || clean == 'पर्याय १' || clean == '१') return 'A';
+    if (clean == '2' || clean == 'OPTION 2' || clean == 'पर्याय २' || clean == '२') return 'B';
+    if (clean == '3' || clean == 'OPTION 3' || clean == 'पर्याय ३' || clean == '३') return 'C';
+    if (clean == '4' || clean == 'OPTION 4' || clean == 'पर्याय ४' || clean == '४') return 'D';
+
+    // 5. Substring / contains match (only for answers with 3+ characters to prevent single letter/digit collisions)
+    if (lowerAns.length >= 3) {
+      if (a.isNotEmpty && (a.toLowerCase().contains(lowerAns) || lowerAns.contains(a.toLowerCase()))) return 'A';
+      if (b.isNotEmpty && (b.toLowerCase().contains(lowerAns) || lowerAns.contains(b.toLowerCase()))) return 'B';
+      if (c.isNotEmpty && (c.toLowerCase().contains(lowerAns) || lowerAns.contains(c.toLowerCase()))) return 'C';
+      if (d.isNotEmpty && (d.toLowerCase().contains(lowerAns) || lowerAns.contains(d.toLowerCase()))) return 'D';
+    }
+
+    return 'A';
+  }
+
   factory QuestionModel.fromMap(Map<String, dynamic> map) {
+    final optA = (map['option_a'] ?? '').toString();
+    final optB = (map['option_b'] ?? '').toString();
+    final optC = (map['option_c'] ?? '').toString();
+    final optD = (map['option_d'] ?? '').toString();
+    final rawCorrect = (map['correct_option'] ?? map['correct_answer'] ?? 'A').toString();
+
+    final resolvedCorrect = resolveCorrectOption(
+      rawAnswer: rawCorrect,
+      optA: optA,
+      optB: optB,
+      optC: optC,
+      optD: optD,
+    );
+
     return QuestionModel(
-      id: map['id'] as String?,
+      id: map['id']?.toString(),
       displayId: map['display_id']?.toString(),
-      subjectTag: map['subject_tag'] as String,
-      subtopicTag: map['subtopic_tag'] as String?,
-      questionText: map['question_text'] as String,
-      optionA: map['option_a'] as String,
-      optionB: map['option_b'] as String,
-      optionC: map['option_c'] as String,
-      optionD: map['option_d'] as String,
-      correctOption: map['correct_option'] as String,
-      explanation: map['explanation'] as String?,
-      pyqYear: map['pyq_year'] as int?,
-      districtTag: map['district_tag'] as String?,
+      subjectTag: (map['subject_tag'] ?? 'unknown').toString(),
+      subtopicTag: map['subtopic_tag']?.toString(),
+      questionText: (map['question_text'] ?? '').toString(),
+      optionA: optA,
+      optionB: optB,
+      optionC: optC,
+      optionD: optD,
+      correctOption: resolvedCorrect,
+      explanation: map['explanation']?.toString(),
+      pyqYear: map['pyq_year'] is int ? map['pyq_year'] as int : null,
+      districtTag: map['district_tag']?.toString(),
     );
   }
 

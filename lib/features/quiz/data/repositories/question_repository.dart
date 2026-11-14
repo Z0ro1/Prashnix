@@ -85,12 +85,23 @@ class QuestionRepository {
           final optB = options.length > 1 ? options[1] : '';
           final optC = options.length > 2 ? options[2] : '';
           final optD = options.length > 3 ? options[3] : '';
+
+          // Bulletproof Validation: Skip invalid or incomplete questions so learners never encounter broken screens
+          if (options.length < 4 ||
+              optA.trim().isEmpty ||
+              optB.trim().isEmpty ||
+              optC.trim().isEmpty ||
+              optD.trim().isEmpty ||
+              text.trim().length < 3 ||
+              text == 'Empty Question') {
+            continue;
+          }
           
           final correctAns = row['correct_answer'] ?? 
                              row['correct_option'] ?? 
                              content['correct_option'] ?? 
                              content['correct_answer'];
-          final correctIndex = _resolveCorrectOption(
+          final correctIndex = QuestionModel.resolveCorrectOption(
             rawAnswer: correctAns,
             optA: optA,
             optB: optB,
@@ -217,12 +228,23 @@ class QuestionRepository {
             final optB = options.length > 1 ? options[1] : '';
             final optC = options.length > 2 ? options[2] : '';
             final optD = options.length > 3 ? options[3] : '';
+
+            // Bulletproof Validation: Skip invalid or incomplete questions
+            if (options.length < 4 ||
+                optA.trim().isEmpty ||
+                optB.trim().isEmpty ||
+                optC.trim().isEmpty ||
+                optD.trim().isEmpty ||
+                text.trim().length < 3 ||
+                text == 'Empty Question') {
+              continue;
+            }
             
             final correctAns = row['correct_answer'] ?? 
                                row['correct_option'] ?? 
                                content['correct_option'] ?? 
                                content['correct_answer'];
-            final correctIndex = _resolveCorrectOption(
+            final correctIndex = QuestionModel.resolveCorrectOption(
               rawAnswer: correctAns,
               optA: optA,
               optB: optB,
@@ -303,45 +325,5 @@ class QuestionRepository {
     }
 
     return maps.map((map) => QuestionModel.fromMap(map)).toList();
-  }
-
-  static String _resolveCorrectOption({
-    required dynamic rawAnswer,
-    required String optA,
-    required String optB,
-    required String optC,
-    required String optD,
-  }) {
-    if (rawAnswer == null) return 'A';
-    final ansStr = rawAnswer.toString().trim();
-    if (ansStr.isEmpty) return 'A';
-
-    // 1. Direct letter or number indicators (e.g. "A", "b", "(C)", "1", "option 2")
-    final clean = ansStr.replaceAll(RegExp(r'^[(\[]|[)\]]$'), '').trim().toUpperCase();
-    if (clean == 'A' || clean == '1' || clean == 'OPTION A' || clean == 'OPTION 1') return 'A';
-    if (clean == 'B' || clean == '2' || clean == 'OPTION B' || clean == 'OPTION 2') return 'B';
-    if (clean == 'C' || clean == '3' || clean == 'OPTION C' || clean == 'OPTION 3') return 'C';
-    if (clean == 'D' || clean == '4' || clean == 'OPTION D' || clean == 'OPTION 4') return 'D';
-
-    // 2. Exact match against option text
-    if (ansStr == optA) return 'A';
-    if (ansStr == optB) return 'B';
-    if (ansStr == optC) return 'C';
-    if (ansStr == optD) return 'D';
-
-    // 3. Case-insensitive & trimmed match
-    final lower = ansStr.toLowerCase();
-    if (optA.isNotEmpty && lower == optA.trim().toLowerCase()) return 'A';
-    if (optB.isNotEmpty && lower == optB.trim().toLowerCase()) return 'B';
-    if (optC.isNotEmpty && lower == optC.trim().toLowerCase()) return 'C';
-    if (optD.isNotEmpty && lower == optD.trim().toLowerCase()) return 'D';
-
-    // 4. Fallback if option text contains the answer or vice-versa
-    if (optA.isNotEmpty && optA.trim().toLowerCase().contains(lower)) return 'A';
-    if (optB.isNotEmpty && optB.trim().toLowerCase().contains(lower)) return 'B';
-    if (optC.isNotEmpty && optC.trim().toLowerCase().contains(lower)) return 'C';
-    if (optD.isNotEmpty && optD.trim().toLowerCase().contains(lower)) return 'D';
-
-    return 'A';
   }
 }

@@ -67,16 +67,28 @@ class WeeklyTestRepository {
             for (final q in questions) {
               final content = q['content'] as Map<String, dynamic>? ?? {};
               final opts = List<String>.from(content['options'] as List? ?? []);
+              final optA = opts.isNotEmpty ? opts[0] : '';
+              final optB = opts.length > 1 ? opts[1] : '';
+              final optC = opts.length > 2 ? opts[2] : '';
+              final optD = opts.length > 3 ? opts[3] : '';
+              final resolvedCorrect = QuestionModel.resolveCorrectOption(
+                rawAnswer: q['correct_answer'] ?? q['correct_option'],
+                optA: optA,
+                optB: optB,
+                optC: optC,
+                optD: optD,
+              );
+
               nodeQuestions.add(QuestionModel(
                 id: q['id']?.toString(),
                 subjectTag: 'weekly_test',
                 subtopicTag: nodeExam,
                 questionText: content['text'] ?? '',
-                optionA: opts.isNotEmpty ? opts[0] : '',
-                optionB: opts.length > 1 ? opts[1] : '',
-                optionC: opts.length > 2 ? opts[2] : '',
-                optionD: opts.length > 3 ? opts[3] : '',
-                correctOption: q['correct_answer'] ?? 'A',
+                optionA: optA,
+                optionB: optB,
+                optionC: optC,
+                optionD: optD,
+                correctOption: resolvedCorrect,
                 explanation: content['explanation'],
                 pyqYear: content['pyq_year'] is int ? content['pyq_year'] : null,
                 districtTag: content['district_tag']?.toString(),

@@ -34,16 +34,28 @@ class WeeklyTestModel {
       final rawList = map['questions'] as List;
       qList = rawList.map((q) {
         if (q is Map<String, dynamic>) {
+          final optA = (q['optionA'] ?? q['option_a'] ?? '').toString();
+          final optB = (q['optionB'] ?? q['option_b'] ?? '').toString();
+          final optC = (q['optionC'] ?? q['option_c'] ?? '').toString();
+          final optD = (q['optionD'] ?? q['option_d'] ?? '').toString();
+          final rawAns = q['correctOption'] ?? q['correct_option'] ?? q['correct_answer'] ?? 'A';
+
           return QuestionModel(
             id: q['id']?.toString(),
             subjectTag: 'weekly_test',
             subtopicTag: map['exam_type']?.toString(),
             questionText: q['questionText'] ?? q['question_text'] ?? '',
-            optionA: q['optionA'] ?? q['option_a'] ?? '',
-            optionB: q['optionB'] ?? q['option_b'] ?? '',
-            optionC: q['optionC'] ?? q['option_c'] ?? '',
-            optionD: q['optionD'] ?? q['option_d'] ?? '',
-            correctOption: q['correctOption'] ?? q['correct_option'] ?? 'A',
+            optionA: optA,
+            optionB: optB,
+            optionC: optC,
+            optionD: optD,
+            correctOption: QuestionModel.resolveCorrectOption(
+              rawAnswer: rawAns,
+              optA: optA,
+              optB: optB,
+              optC: optC,
+              optD: optD,
+            ),
             explanation: q['explanation']?.toString(),
             pyqYear: q['pyqYear'] is int ? q['pyqYear'] : null,
             districtTag: q['districtTag']?.toString(),

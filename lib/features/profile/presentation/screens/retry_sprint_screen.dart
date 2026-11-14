@@ -217,7 +217,7 @@ class RetrySprintScreen extends ConsumerWidget {
                       } else if (state.status == RetryStatus.checkedIncorrect) {
                         if (state.selectedOption == label) {
                           pillState = OptionState.incorrect;
-                        } else if (question.correctOption == label) {
+                        } else if (question.isAnswerCorrect(label)) {
                           pillState = OptionState.correct;
                         }
                       }
@@ -300,10 +300,5 @@ class RetrySprintScreen extends ConsumerWidget {
     );
   }
 
-  String _getCorrectOptionText(QuestionModel q) {
-    if (q.correctOption == 'A') return q.optionA;
-    if (q.correctOption == 'B') return q.optionB;
-    if (q.correctOption == 'C') return q.optionC;
-    return q.optionD;
-  }
+  String _getCorrectOptionText(QuestionModel q) => q.correctOptionText;
 }

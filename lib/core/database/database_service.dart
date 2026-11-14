@@ -151,5 +151,12 @@ class DatabaseService {
         ''');
       } catch (_) {}
     }
+    if (oldVersion < 9) {
+      // Version 9 clears cached questions table to re-fetch and re-index questions
+      // with the bulletproof answer resolver, eliminating previous number-letter mismatches
+      try {
+        await db.execute('DELETE FROM ${DbConstants.tableQuestions}');
+      } catch (_) {}
+    }
   }
 }

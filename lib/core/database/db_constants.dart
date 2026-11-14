@@ -2,7 +2,7 @@ class DbConstants {
   DbConstants._();
 
   static const String databaseName = 'spardha_questions.db';
-  static const int databaseVersion = 8;
+  static const int databaseVersion = 9;
 
   // Table Names
   static const String tableQuestions = 'questions';

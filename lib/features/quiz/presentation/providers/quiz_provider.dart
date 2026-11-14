@@ -205,7 +205,7 @@ class QuizNotifier extends _$QuizNotifier {
     final question = state.currentQuestion;
     if (question == null) return;
 
-    final isCorrect = state.selectedOption == question.correctOption;
+    final isCorrect = question.isAnswerCorrect(state.selectedOption);
 
     // Log attempt for Subject & Topic Weakness Heatmap
     if (question.id != null) {

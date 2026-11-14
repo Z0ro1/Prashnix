@@ -363,7 +363,7 @@ class QuizScreen extends ConsumerWidget {
                       } else if (state.status == QuizStatus.checkedIncorrect) {
                         if (state.selectedOption == label) {
                           pillState = OptionState.incorrect;
-                        } else if (question.correctOption == label) {
+                        } else if (question.isAnswerCorrect(label)) {
                           pillState = OptionState.correct;
                         }
                       }
@@ -413,10 +413,5 @@ class QuizScreen extends ConsumerWidget {
   );
 }
 
-  String _getCorrectOptionText(QuestionModel q) {
-    if (q.correctOption == 'A') return q.optionA;
-    if (q.correctOption == 'B') return q.optionB;
-    if (q.correctOption == 'C') return q.optionC;
-    return q.optionD;
-  }
+  String _getCorrectOptionText(QuestionModel q) => q.correctOptionText;
 }
